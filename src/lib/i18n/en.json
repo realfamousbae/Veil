@@ -10,9 +10,9 @@
   "settings.open": "Map settings",
   "settings.title": "Settings",
   "settings.theme": "Theme",
-  "settings.themeAuto": "Match system",
+  "settings.themeAuto": "Auto",
   "settings.language": "Language",
-  "settings.languageAuto": "Match browser",
+  "settings.languageAuto": "Auto",
   "common.close": "Close",
   "search.clear": "Clear search",
   "search.results": "Search results",
@@ -91,5 +91,14 @@
   "privacy.location": "Your location is requested only when you tap “Show my location”. It stays on this device: it is never sent to a server and never put into the page address.",
   "privacy.links": "Links to OpenStreetMap open a third-party website.",
   "privacy.selfHostTitle": "No third parties at all",
-  "privacy.selfHost": "Veil can run on your own server, with your own map files and search. Then nobody else is involved."
+  "privacy.selfHost": "Veil can run on your own server, with your own map files and search. Then nobody else is involved.",
+  "place.copy": "Copy",
+  "place.copyCoords": "Copy coordinates",
+  "place.copied": "Coordinates copied.",
+  "place.share": "Share",
+  "place.linkCopied": "Link copied.",
+  "place.fix": "Fix",
+  "place.report": "Report",
+  "place.address": "Address",
+  "place.source": "Source"
 }

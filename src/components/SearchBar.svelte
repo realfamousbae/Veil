@@ -32,7 +32,7 @@
   }
 </script>
 
-<form class="search" role="search" onsubmit={(e) => e.preventDefault()}>
+<form class="search glass" role="search" onsubmit={(e) => e.preventDefault()}>
   <Icon name="search" />
   <input
     bind:this={input}
@@ -53,7 +53,7 @@
   />
   {#if search.query}
     <button
-      class="clear"
+      class="clear icon-btn"
       type="button"
       aria-label={t('search.clear')}
       onclick={() => {
@@ -72,19 +72,17 @@
   .search {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-height: 48px;
-    padding: 0 4px 0 12px;
-    background: var(--color-surface-raised);
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 4px 0 16px;
+    border-radius: var(--radius-full);
     color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
   }
 
   input {
     flex: 1;
     min-width: 0;
-    height: 46px;
+    height: 48px;
     padding: 0;
     border: 0;
     background: none;
@@ -109,34 +107,23 @@
 
   .search:focus-within {
     outline: 2px solid var(--color-focus);
-    outline-offset: 1px;
+    outline-offset: 2px;
   }
 
   .clear {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: none;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  .clear:hover {
-    background: var(--color-surface-hover);
+    width: 40px;
+    height: 40px;
+    color: var(--color-text-muted);
   }
 
   kbd {
-    margin-right: 8px;
-    padding: 0 6px;
-    border: 1px solid var(--color-border);
+    margin-right: 10px;
+    padding: 0 7px;
     border-radius: var(--radius-sm);
+    background: var(--glass-group);
     font: inherit;
     font-size: 12px;
-    line-height: 20px;
+    line-height: 22px;
   }
 
   /* No physical keyboard shortcut hint on touch devices. */

@@ -10,9 +10,9 @@
   "settings.open": "Настройки карты",
   "settings.title": "Настройки",
   "settings.theme": "Тема",
-  "settings.themeAuto": "Как в системе",
+  "settings.themeAuto": "Авто",
   "settings.language": "Язык",
-  "settings.languageAuto": "Как в браузере",
+  "settings.languageAuto": "Авто",
   "common.close": "Закрыть",
   "search.clear": "Очистить поиск",
   "search.results": "Результаты поиска",
@@ -91,5 +91,14 @@
   "privacy.location": "Местоположение запрашивается, только когда вы нажимаете «Показать, где я». Оно остаётся на устройстве: не отправляется на сервер и не попадает в адрес страницы.",
   "privacy.links": "Ссылки на OpenStreetMap открывают сторонний сайт.",
   "privacy.selfHostTitle": "Совсем без третьих сторон",
-  "privacy.selfHost": "Veil можно развернуть на своём сервере — со своими файлами карт и своим поиском. Тогда больше никто не участвует."
+  "privacy.selfHost": "Veil можно развернуть на своём сервере — со своими файлами карт и своим поиском. Тогда больше никто не участвует.",
+  "place.copy": "Копировать",
+  "place.copyCoords": "Скопировать координаты",
+  "place.copied": "Координаты скопированы.",
+  "place.share": "Поделиться",
+  "place.linkCopied": "Ссылка скопирована.",
+  "place.fix": "Исправить",
+  "place.report": "Сообщить",
+  "place.address": "Адрес",
+  "place.source": "Источник"
 }

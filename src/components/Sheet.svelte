@@ -29,8 +29,8 @@
     wide,
   }: Props = $props();
 
-  const PEEK = 64;
-  const TOP_GAP = 80; // keeps the floating search bar visible when the sheet is full
+  const PEEK = 76;
+  const TOP_GAP = 84; // keeps the floating search bar visible when the sheet is full
   const ORDER: SheetSnap[] = ['collapsed', 'half', 'full'];
 
   const heights = $derived({
@@ -95,7 +95,7 @@
 </script>
 
 <section
-  class="sheet"
+  class="sheet glass glass-panel"
   class:dragging={drag}
   data-snap={snap}
   style:--sheet-full="{heights.full}px"
@@ -120,20 +120,18 @@
 </section>
 
 <style>
+  /* Phone: a floating glass sheet, inset from the screen edges. */
   .sheet {
     position: absolute;
-    inset: auto 0 0;
+    inset: auto 8px calc(8px + env(safe-area-inset-bottom));
     z-index: 2;
     display: flex;
     flex-direction: column;
     height: var(--sheet-full);
-    padding-bottom: env(safe-area-inset-bottom);
-    background: var(--color-surface);
+    border-radius: var(--radius-xl);
     color: var(--color-text);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    box-shadow: var(--shadow-lg);
     transform: translateY(var(--sheet-y));
-    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.25, 1);
     will-change: transform;
   }
 
@@ -147,7 +145,7 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    height: 44px;
+    height: 28px;
     padding: 0;
     border: 0;
     background: none;
@@ -156,10 +154,11 @@
   }
 
   .grip {
-    width: 40px;
+    width: 36px;
     height: 5px;
     border-radius: var(--radius-full);
-    background: var(--color-border);
+    background: var(--color-text-muted);
+    opacity: 0.4;
   }
 
   .content {
@@ -167,7 +166,7 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0 16px 16px;
+    padding: 4px 16px 16px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -176,21 +175,22 @@
     }
   }
 
-  /* Wide layout: a static side panel; drag state is ignored. */
+  /* Desktop: a floating glass column over the map, below the search bar. */
   @container shell (min-width: 768px) {
     .sheet {
-      position: static;
-      grid-area: panel;
+      inset: 82px auto 16px 16px;
+      width: 380px;
       height: auto;
-      padding-bottom: 0;
-      border-radius: 0;
-      box-shadow: none;
       transform: none;
       transition: none;
     }
 
     .handle {
       display: none;
+    }
+
+    .content {
+      padding-top: 12px;
     }
   }
 </style>

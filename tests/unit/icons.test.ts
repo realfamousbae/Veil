@@ -1,12 +1,11 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import sprite from '../../public/assets/icons.svg?raw';
 
 // Safari ignores <style> inside an external SVG sprite used via <use>, so every shape
 // must carry its own presentation attributes, or icons render as black blobs (or vanish).
-const sprite = readFileSync('public/assets/icons.svg', 'utf8');
-const shapes = [...sprite.matchAll(/<(path|circle|rect|line|polyline|polygon|ellipse)\b[^>]*>/g)].map(
-  (m) => m[0],
-);
+const shapes = [
+  ...sprite.matchAll(/<(path|circle|rect|line|polyline|polygon|ellipse)\b[^>]*>/g),
+].map((m) => m[0]);
 
 describe('icon sprite', () => {
   it('has no <style> block', () => {

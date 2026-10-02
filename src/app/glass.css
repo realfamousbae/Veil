@@ -1,0 +1,69 @@
+/*
+ * Liquid Glass material. Technique after liquid-glass-svelte by Tozaburo (MIT):
+ * a sharp, bright edge band around a more blurred center reads as thick glass, and a
+ * thin specular rim catches the light.
+ *
+ *   ::before  the whole shape, barely blurred and brightened  → the edge band
+ *   ::after   inset by the edge width, strongly blurred       → the center
+ *
+ * Both layers inherit the element's border radius, so the band follows the shape
+ * (masks made of linear gradients would draw rectangles inside rounded controls).
+ *
+ * Usage: class="glass" for floating controls, class="glass glass-panel" for panels
+ * with text. Colors, blur and shadows come from theme tokens (src/themes/*).
+ */
+/* stylelint-disable property-no-vendor-prefix -- Safari before 18 needs the prefix */
+
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-panel {
+  --glass-tint: var(--glass-panel);
+  --glass-shadow: var(--glass-panel-shadow);
+  --glass-blur: var(--glass-panel-blur);
+}
+
+.glass::before,
+.glass::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass::before {
+  inset: 0;
+  background: var(--glass-edge);
+  -webkit-backdrop-filter: blur(var(--glass-edge-blur)) saturate(var(--glass-saturate))
+    brightness(1.05);
+  backdrop-filter: blur(var(--glass-edge-blur)) saturate(var(--glass-saturate)) brightness(1.05);
+}
+
+.glass::after {
+  inset: var(--glass-edge-width);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* No backdrop filters (old browsers) or the user asked for less transparency: solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--color-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--color-surface);
+  }
+
+  .glass::before,
+  .glass::after {
+    display: none;
+  }
+}

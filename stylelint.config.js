@@ -21,7 +21,7 @@ export default {
       'color-mix',
     ],
     'declaration-property-value-allowed-list': {
-      '/radius$/': [...varOnly, '0', '50%'],
+      '/radius$/': [...varOnly, '0', '50%', 'inherit'],
       '/shadow$/': [...varOnly, 'none'],
     },
     'selector-pseudo-class-no-unknown': [true, { ignorePseudoClasses: ['global'] }],

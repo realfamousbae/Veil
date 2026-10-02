@@ -28,6 +28,7 @@
 
 <div class="controls">
   <button
+    class="glass"
     type="button"
     title={t('settings.open')}
     aria-label={t('settings.open')}
@@ -35,7 +36,7 @@
   >
     <Icon name="layers" />
   </button>
-  <div class="group">
+  <div class="group glass">
     <button
       type="button"
       title={t('map.zoomIn')}
@@ -44,6 +45,7 @@
     >
       <Icon name="plus" />
     </button>
+    <span class="divider" aria-hidden="true"></span>
     <button
       type="button"
       title={t('map.zoomOut')}
@@ -54,7 +56,7 @@
     </button>
   </div>
   <button
-    class="locate"
+    class="locate glass"
     type="button"
     data-mode={locateMode}
     title={locateLabel}
@@ -75,33 +77,41 @@
     gap: 12px;
   }
 
-  .group {
-    display: flex;
-    flex-direction: column;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-  }
-
   button {
     display: grid;
     place-items: center;
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     padding: 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
+    border: 0;
+    border-radius: var(--radius-full);
     color: var(--color-text);
-    box-shadow: var(--shadow-md);
     cursor: pointer;
+    transition: transform 0.15s ease;
   }
 
-  button:hover {
-    background: var(--color-surface-hover);
+  button:active {
+    transform: scale(0.94);
   }
 
+  .group {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-full);
+  }
+
+  /* Zoom in/out share one glass capsule. */
   .group button {
+    border-radius: 0;
+    background: none;
     box-shadow: none;
+  }
+
+  /* Hairline between zoom in and out. */
+  .divider {
+    height: 1px;
+    margin: 0 12px;
+    background: var(--color-border);
   }
 
   .locate[data-mode='shown'] {
@@ -109,8 +119,8 @@
   }
 
   .locate[data-mode='follow'] {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
+    --glass-tint: var(--color-accent);
+
     color: var(--color-on-accent);
   }
 
@@ -124,20 +134,15 @@
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    button {
+      transition: none;
+    }
+  }
+
   @keyframes pulse {
     to {
       opacity: 0.3;
     }
-  }
-
-  .group button:first-child {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-
-  .group button:last-child {
-    border-top: 0;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
   }
 </style>

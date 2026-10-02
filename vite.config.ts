@@ -37,6 +37,8 @@ export default defineConfig({
         globPatterns: [
           '**/*.{js,css,html,svg,png}',
           'assets/sprites/**/*.json',
+          // UI font: Latin and Cyrillic subsets (others load on demand, if ever needed).
+          'assets/jetbrains-mono-{latin,cyrillic}-wght-normal-*.woff2',
           // Glyph ranges for Latin and Cyrillic labels; others are cached on first use.
           'assets/fonts/Noto Sans {Regular,Medium,Italic}/{0-255,256-511,1024-1279,8192-8447}.pbf',
         ],
@@ -66,5 +68,7 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
+    // Fonts are never inlined as data: URIs (the CSP allows fonts only from 'self').
+    assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined),
   },
 });

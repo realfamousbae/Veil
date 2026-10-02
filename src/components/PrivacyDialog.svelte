@@ -19,96 +19,56 @@
   }
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="privacy-title" {onclick}>
+<dialog
+  class="sheet-dialog glass glass-panel"
+  bind:this={dialog}
+  aria-labelledby="privacy-title"
+  {onclick}
+>
   <header>
     <h2 id="privacy-title">{t('privacy.title')}</h2>
-    <button type="button" aria-label={t('common.close')} onclick={() => dialog.close()}>
+    <button
+      class="glass icon-btn"
+      type="button"
+      aria-label={t('common.close')}
+      onclick={() => dialog.close()}
+    >
       <Icon name="close" />
     </button>
   </header>
 
   <p class="lead">{t('privacy.intro')}</p>
 
-  <h3>{t('privacy.deviceTitle')}</h3>
-  <p>{t('privacy.device')}</p>
+  <h3 class="section-title">{t('privacy.deviceTitle')}</h3>
+  <p class="list-group block">{t('privacy.device')}</p>
 
-  <h3>{t('privacy.whoTitle')}</h3>
-  <ul>
-    <li>{t('privacy.hosting', { host: siteHost })}</li>
-    <li>{t('privacy.search', { host: geocoderHost })}</li>
-    <li>{t('privacy.location')}</li>
-    <li>{t('privacy.links')}</li>
+  <h3 class="section-title">{t('privacy.whoTitle')}</h3>
+  <ul class="list-group">
+    <li class="list-row">{t('privacy.hosting', { host: siteHost })}</li>
+    <li class="list-row">{t('privacy.search', { host: geocoderHost })}</li>
+    <li class="list-row">{t('privacy.location')}</li>
+    <li class="list-row">{t('privacy.links')}</li>
   </ul>
 
-  <h3>{t('privacy.selfHostTitle')}</h3>
-  <p>{t('privacy.selfHost')}</p>
+  <h3 class="section-title">{t('privacy.selfHostTitle')}</h3>
+  <p class="list-group block">{t('privacy.selfHost')}</p>
 </dialog>
 
 <style>
-  dialog {
-    width: min(520px, calc(100% - 32px));
-    max-height: calc(100% - 32px);
-    padding: 0 20px 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    color: var(--color-text);
-    box-shadow: var(--shadow-lg);
-    line-height: 1.45;
-  }
-
-  dialog::backdrop {
-    background: var(--color-scrim);
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 18px;
-  }
-
-  h3 {
-    margin: 16px 0 4px;
-    font-size: 15px;
-  }
-
-  p,
-  ul {
-    margin: 0;
-  }
-
   .lead {
+    margin: 0 4px;
+    font-size: 16px;
     font-weight: 600;
+    line-height: 1.4;
   }
 
-  ul {
-    padding-left: 20px;
+  .block {
+    padding: 12px 16px;
+    font-size: 14px;
   }
 
-  li + li {
-    margin-top: 6px;
-  }
-
-  button {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    margin-right: -12px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: none;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: var(--color-surface-hover);
+  .list-row {
+    font-size: 14px;
+    line-height: 1.45;
   }
 </style>

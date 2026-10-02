@@ -1,19 +1,37 @@
+/*
+ * The page is locked to the visible viewport. On iOS 26 Safari, bottom: 0 of a taller
+ * layout viewport sits under the floating browser controls; 100dvh ends above them.
+ */
 html,
 body,
 #app {
   height: 100%;
+  height: -webkit-fill-available;
+  height: 100dvh;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
   background: var(--color-surface);
   color: var(--color-text);
   font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  font-feature-settings:
+    'calt' 1,
+    'zero' 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+button,
+input {
+  font: inherit;
 }
 
 /* Selected place marker (a MapLibre Marker element, outside component scope). */
