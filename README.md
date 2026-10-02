@@ -141,19 +141,152 @@ pnpm dev
 
 Cloudflare Web Analytics для проекта держите выключенной.
 
-## Свой сервер
+## Развёртка собственного сервиса
 
-Подойдёт любой статический веб-сервер с поддержкой HTTP Range: раздайте `dist/` и файлы
-`.pmtiles`, укажите их в `config.json`. Для поиска без третьих сторон поднимите свой
-[Photon](https://github.com/komoot/photon) и пропишите `geocoder.url` (добавьте `"ru"` в
-`langs`, если в вашей сборке есть русский). См. также [раздел об ответственности](#безопасность-и-ответственность).
+Свой экземпляр Veil полностью убирает третьи стороны: и карта, и поиск работают на вашем сервере.
+Ниже — путь для обычного Linux-сервера с nginx. Подойдёт любой веб-сервер, который умеет отдавать
+статические файлы и поддерживает HTTP Range-запросы.
+
+### 1. Что понадобится
+
+- Сервер с Linux и доменом с HTTPS: без защищённого соединения браузеры не дадут геопозицию и
+  не установят приложение.
+- Для сборки: Node 22+, pnpm 10, git, [`pmtiles`](https://github.com/protomaps/go-pmtiles/releases).
+- Для своего поиска (по желанию): Java 21+, `pbzip2` или `bzip2`. Готовая база Photon по России —
+  около 3 ГБ в архиве; по всей планете — около 95 ГБ на диске и от 64 ГБ памяти.
+
+### 2. Соберите сайт
+
+```bash
+git clone https://github.com/realfamousbae/Veil.git && cd Veil
+pnpm install
+echo "VITE_SITE_URL=https://map.example.org" > .env   # адрес для превью ссылок
+pnpm build                                          # результат — в dist/
+```
+
+### 3. Нарежьте карты
+
+Карта состоит из обзора всего мира (зумы 0–7) и детальных регионов (до зума 15). Регионы описаны в
+[`scripts/regions.tsv`](scripts/regions.tsv): чтобы добавить свой, допишите строку с `id`,
+названиями и рамкой (`мин_долгота,мин_широта,макс_долгота,макс_широта`). Скрипт читает из
+свежей сборки планеты [Protomaps](https://maps.protomaps.com/builds/) только нужные куски —
+скачивать всю планету не требуется.
+
+```bash
+scripts/build-regions.sh --out /srv/veil/tiles world           # ≈190 МБ
+scripts/build-regions.sh --out /srv/veil/tiles moscow-oblast   # ≈570 МБ, или ваш регион
+```
+
+В папке появятся `world.pmtiles`, файлы регионов и каталог `index.json` для экрана «Офлайн-карты».
+Размеры для ориентира — в [docs/tile-sizes.md](docs/tile-sizes.md). Обновляйте карты раз в месяц
+той же командой.
+
+### 4. Поднимите поиск (по желанию)
+
+Без этого шага поиск идёт через публичный [Photon](https://photon.komoot.io) от komoot.
+
+```bash
+mkdir -p /srv/photon && cd /srv/photon
+wget https://github.com/komoot/photon/releases/download/1.3.0/photon-1.3.0.jar
+# База по России (для другой страны или всей планеты — https://download1.graphhopper.com/public/):
+wget -O - https://download1.graphhopper.com/public/europe/russia/photon-db-russia-1.0-latest.tar.bz2 \
+  | pbzip2 -cd | tar x
+java -Xmx8G -jar photon-1.3.0.jar serve -listen-ip 127.0.0.1
+```
+
+Photon будет слушать `127.0.0.1:2322`; наружу его открывает nginx на том же адресе, что и сайт
+(шаг 6), поэтому CORS не нужен. Запустите его как сервис systemd, чтобы он поднимался сам.
+Базу обновляйте атомарно: распакуйте новую рядом, подмените папку и перезапустите Photon —
+никогда не распаковывайте поверх старой.
+
+### 5. Настройте `config.json`
+
+Отредактируйте `dist/config.json` (пересборка не нужна):
+
+```json
+{
+  "tiles": { "world": "/tiles/world.pmtiles", "worldMaxZoom": 7 },
+  "regions": "/tiles/index.json",
+  "geocoder": { "type": "photon", "url": "/geo", "langs": ["en", "de", "fr"] },
+  "server": null
+}
+```
+
+`"url": "/geo"` — свой Photon за nginx; для публичного оставьте `https://photon.komoot.io`.
+Готовые базы Photon содержат английские, немецкие, французские и местные названия, поэтому
+`langs` оставьте как есть. Затем пересоздайте заголовки безопасности под ваш конфиг:
+
+```bash
+node scripts/build-headers.mjs   # пишет dist/_headers; строку CSP из него перенесите в nginx
+```
+
+### 6. Настройте nginx
+
+```nginx
+# /etc/nginx/snippets/veil-headers.conf — заголовки безопасности (CSP из dist/_headers)
+add_header Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; worker-src 'self' blob:; style-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" always;
+add_header Referrer-Policy "no-referrer" always;
+add_header Permissions-Policy "geolocation=(self), camera=(), microphone=(), browsing-topics=()" always;
+add_header X-Content-Type-Options "nosniff" always;
+```
+
+```nginx
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name map.example.org;
+    # ssl_certificate / ssl_certificate_key — например, от Let's Encrypt
+
+    root /srv/veil/dist;
+    access_log off;   # не хранить, кто какие места смотрел
+
+    include snippets/veil-headers.conf;
+
+    # Файлы карт: nginx сам отвечает на Range-запросы
+    location /tiles/ {
+        alias /srv/veil/tiles/;
+        types { application/octet-stream pmtiles; application/json json; }
+        add_header Cache-Control "public, max-age=86400";
+        include snippets/veil-headers.conf;
+    }
+
+    # Свой поиск на том же адресе
+    location /geo/ {
+        proxy_pass http://127.0.0.1:2322/;
+        proxy_set_header X-Forwarded-For "";   # не передавать IP посетителей дальше
+    }
+
+    location = /sw.js       { add_header Cache-Control "no-cache"; include snippets/veil-headers.conf; }
+    location = /config.json { add_header Cache-Control "no-cache"; include snippets/veil-headers.conf; }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
+```
+
+Сниппет с заголовками подключён и в каждом `location` с собственным `add_header`: иначе nginx
+не наследует заголовки сервера. Если поиск остался публичным, допишите
+`https://photon.komoot.io` в `connect-src`.
+
+### 7. Проверьте
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI https://map.example.org/ | grep -i content-security-policy
+curl -s -o /dev/null -w "%{http_code}\n" -H "Range: bytes=0-6" https://map.example.org/tiles/world.pmtiles   # 206
+curl -s "https://map.example.org/geo/api?q=Москва&limit=1" | head -c 200
+```
+
+Откройте сайт: карта рисуется, поиск находит адреса, а в «Настройки → Приватность» указан ваш
+адрес. Перед запуском прочитайте [раздел об ответственности](#безопасность-и-ответственность).
 
 ## Благодарности
 
 - Данные карты © [участники OpenStreetMap](https://www.openstreetmap.org/copyright), лицензия ODbL.
 - Стиль и сборки тайлов — [Protomaps](https://protomaps.com/) (BSD-3-Clause), рендеринг — [MapLibre](https://maplibre.org/).
 - Поиск — [Photon](https://github.com/komoot/photon) от komoot.
-- Стеклянный материал — по технике [liquid-glass-svelte](https://github.com/Tozaburo/liquid-glass-svelte) (Tozaburo, MIT).
+- Дизайн в стиле Liquid Glass — по технике [liquid-glass-svelte](https://github.com/Tozaburo/liquid-glass-svelte) (Tozaburo, MIT).
 - Шрифты — [JetBrains Mono](https://www.jetbrains.com/lp/mono/) и Noto Sans (SIL OFL).
 
 ## Лицензия
