@@ -16,6 +16,12 @@
   let map: Map | undefined;
   let applied: StyleSpecification | undefined;
 
+  /** Flags when the current style is fully rendered (used by e2e tests). */
+  function markReady(m: Map) {
+    container.dataset['ready'] = 'false';
+    m.once('idle', () => (container.dataset['ready'] = 'true'));
+  }
+
   onMount(() => {
     setupMapLibre();
     applied = style;
@@ -29,8 +35,7 @@
       // Attribution and zoom controls are our own themed components.
       attributionControl: false,
     });
-    // Signals that the first frame with all visible tiles is rendered (used by e2e tests).
-    map.once('idle', () => (container.dataset['ready'] = 'true'));
+    markReady(map);
     onready?.(map);
     return () => {
       map?.remove();
@@ -44,6 +49,7 @@
     if (!map || next === applied) return;
     applied = next;
     map.setStyle(next, { diff: true });
+    markReady(map);
   });
 </script>
 
