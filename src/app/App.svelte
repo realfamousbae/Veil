@@ -10,6 +10,7 @@
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
   import { i18n, t } from '../lib/i18n/i18n.svelte';
+  import { readCameraFromHash, syncCameraHash, type Camera } from '../lib/map/hash';
   import { onLongPress } from '../lib/map/long-press';
   import MapView from '../lib/map/MapView.svelte';
   import { buildStyle } from '../lib/map/style';
@@ -22,7 +23,7 @@
   import { applyTheme } from '../lib/theme/css';
   import { themeState } from '../lib/theme/theme.svelte';
 
-  const MOSCOW: [number, number] = [37.62, 55.75];
+  const MOSCOW: Camera = { center: [37.62, 55.75], zoom: 12, bearing: 0, pitch: 0 };
   const WIDE = 768; // must match the @container breakpoints in components
   const assetsBase = resolveUrl(`${import.meta.env.BASE_URL}assets/`);
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -31,6 +32,12 @@
   let geocoder = $state.raw<GeocodeProvider>();
   let error = $state<string>();
   let map = $state.raw<Map>();
+  /**
+   * The camera was moved to the user's own position and they haven't moved it since.
+   * While true, neither the URL nor the geocoder (as search bias) may learn the map
+   * center, because it is the user's location (PLAN.md §5.4).
+   */
+  let cameraOnUser = $state(false);
 
   let width = $state(0);
   let height = $state(0);
@@ -49,7 +56,7 @@
     lang: () => i18n.locale,
     bias: () => {
       const c = map?.getCenter();
-      return searchPrefs.bias && c ? { lng: c.lng, lat: c.lat } : undefined;
+      return searchPrefs.bias && c && !cameraOnUser ? { lng: c.lng, lat: c.lat } : undefined;
     },
     onEnterOnly: () => searchPrefs.onEnter,
   });
@@ -57,6 +64,9 @@
   // A place from a shared link is shown as is: no geocoder request on load (PLAN.md §5.1).
   const restored = readPlaceFromHash();
   if (restored) search.select(restored);
+  const initialCamera: Camera =
+    readCameraFromHash() ??
+    (restored ? { ...MOSCOW, center: [restored.point.lng, restored.point.lat], zoom: 16 } : MOSCOW);
 
   $effect(() => applyTheme(themeState.current));
   $effect(() => {
@@ -95,6 +105,11 @@
       marker = new Marker({ element: el, anchor: 'bottom' });
     }
     marker.setLngLat(place.point).addTo(map);
+  });
+
+  $effect(() => {
+    if (!map) return;
+    return syncCameraHash(map, () => cameraOnUser);
   });
 
   $effect(() => {
@@ -162,12 +177,7 @@
       {#if error}
         <p role="alert">{error}</p>
       {:else if style}
-        <MapView
-          {style}
-          center={restored ? [restored.point.lng, restored.point.lat] : MOSCOW}
-          zoom={restored ? 16 : 12}
-          onready={(m) => (map = m)}
-        />
+        <MapView {style} camera={initialCamera} onready={(m) => (map = m)} />
       {/if}
       <div class="corner">
         <MapControls {map} onsettings={() => settings.open()} />
