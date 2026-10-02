@@ -1,10 +1,12 @@
 <script lang="ts">
   import { i18n, LOCALES, t, type Locale } from '../lib/i18n/i18n.svelte';
+  import { installState } from '../lib/pwa/install.svelte';
   import { searchPrefs } from '../lib/search/prefs.svelte';
   import { themeState } from '../lib/theme/theme.svelte';
   import { themes } from '../themes';
   import Icon from './Icon.svelte';
 
+  let { onoffline }: { onoffline: () => void } = $props();
   let dialog: HTMLDialogElement;
 
   export function open() {
@@ -87,6 +89,32 @@
       </span>
     </label>
   </fieldset>
+
+  <section class="app" aria-labelledby="settings-app">
+    <h3 id="settings-app">{t('settings.app')}</h3>
+    <button
+      class="offline"
+      type="button"
+      onclick={() => {
+        dialog.close();
+        onoffline();
+      }}>{t('offline.open')}</button
+    >
+    {#if installState.standalone}
+      <p>{t('pwa.installed')}</p>
+    {:else}
+      <p class="muted">{t('pwa.installHint')}</p>
+      {#if installState.canPrompt}
+        <button class="install" type="button" onclick={() => installState.install()}>
+          {t('pwa.install')}
+        </button>
+      {:else if installState.ios}
+        <p>{t('pwa.iosHint')}</p>
+      {:else}
+        <p>{t('pwa.otherHint')}</p>
+      {/if}
+    {/if}
+  </section>
 </dialog>
 
 <style>
@@ -158,6 +186,45 @@
 
   label:hover {
     background: var(--color-surface-hover);
+  }
+
+  .app h3 {
+    margin: 16px 0 4px;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    font-weight: normal;
+  }
+
+  .app p {
+    margin: 0 0 8px;
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+
+  .offline {
+    min-height: 44px;
+    margin-bottom: 8px;
+    padding: 0 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .install {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font: inherit;
+    cursor: pointer;
   }
 
   .with-hint {

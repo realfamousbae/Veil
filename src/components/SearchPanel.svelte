@@ -10,10 +10,12 @@
     search: SearchState;
     onEnterOnly: boolean;
     onpick: (place: Place) => void;
+    /** Closes the place card (also used by the system Back button). */
+    oncloseplace: () => void;
     onnotice: (text: string) => void;
   }
 
-  let { search, onEnterOnly, onpick, onnotice }: Props = $props();
+  let { search, onEnterOnly, onpick, oncloseplace, onnotice }: Props = $props();
 
   const queryLength = $derived(search.query.trim().length);
   const status = $derived.by(() => {
@@ -35,8 +37,8 @@
     resolving={search.resolving}
     saved={savedPlaces.has(search.selected.id)}
     ontogglesave={() => search.selected && savedPlaces.toggle(search.selected)}
-    onback={search.results.length ? () => search.deselect() : undefined}
-    onclose={() => search.deselect()}
+    onback={search.results.length ? oncloseplace : undefined}
+    onclose={oncloseplace}
   />
 {:else}
   <p class="status" role="status" aria-live="polite">{status}</p>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { VectorSourceSpecification } from '@maplibre/maplibre-gl-style-spec';
   import { Marker, type Map } from 'maplibre-gl';
   import { untrack } from 'svelte';
   import Attribution from '../components/Attribution.svelte';
@@ -7,6 +6,7 @@
   import MapControls from '../components/MapControls.svelte';
   import SearchBar from '../components/SearchBar.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
+  import OfflineDialog from '../components/OfflineDialog.svelte';
   import SettingsDialog from '../components/SettingsDialog.svelte';
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
@@ -18,13 +18,23 @@
   import MapView from '../lib/map/MapView.svelte';
   import { buildStyle } from '../lib/map/style';
   import { SavedPlaceMarkers } from '../lib/places/markers';
+  import { offlineRegions } from '../lib/offline/regions.svelte';
   import { savedPlaces } from '../lib/places/saved.svelte';
+  import { installState } from '../lib/pwa/install.svelte';
+  import { registerServiceWorker } from '../lib/pwa/register';
   import { PhotonGeocodeProvider } from '../lib/providers/photon';
-  import { PmtilesTileProvider } from '../lib/providers/pmtiles';
   import type { GeocodeProvider, Place } from '../lib/providers/types';
   import { readPlaceFromHash, writePlaceToHash } from '../lib/search/place-hash';
   import { searchPrefs } from '../lib/search/prefs.svelte';
   import { SearchState } from '../lib/search/search.svelte';
+  import { loadCatalog, type RegionInfo } from '../lib/tiles/catalog';
+  import {
+    localArchive,
+    registerTileProtocol,
+    remoteArchive,
+    tileResolver,
+    type Archive,
+  } from '../lib/tiles/resolver';
   import { applyTheme } from '../lib/theme/css';
   import { themeState } from '../lib/theme/theme.svelte';
 
@@ -33,7 +43,11 @@
   const assetsBase = resolveUrl(`${import.meta.env.BASE_URL}assets/`);
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let source = $state.raw<VectorSourceSpecification>();
+  let ready = $state(false);
+  let worldMaxZoom = $state(0);
+  let tilesVersion = $state(0);
+  let catalog = $state.raw<RegionInfo[]>([]);
+  let noDetail = $state(false);
   let geocoder = $state.raw<GeocodeProvider>();
   let error = $state<string>();
   let map = $state.raw<Map>();
@@ -50,10 +64,19 @@
   let sheetHeight = $state(0);
   let searchInput = $state<HTMLInputElement>();
   let settings: SettingsDialog;
+  let offlineDialog: OfflineDialog;
 
   const wide = $derived(width >= WIDE);
   const style = $derived(
-    source && buildStyle({ source, theme: themeState.current, lang: i18n.locale, assetsBase }),
+    ready
+      ? buildStyle({
+          theme: themeState.current,
+          lang: i18n.locale,
+          assetsBase,
+          worldMaxZoom,
+          tilesVersion,
+        })
+      : undefined,
   );
 
   const search = new SearchState({
@@ -104,13 +127,42 @@
     return () => m.off('dragstart', leave);
   });
 
-  let notice = $state<string | null>(null);
-  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
-  function showNotice(text: string) {
-    notice = text;
-    clearTimeout(noticeTimer);
-    noticeTimer = setTimeout(() => (notice = null), 6000);
+  interface Notice {
+    text: string;
+    action?: { label: string; run: () => void };
   }
+  let notice = $state<Notice | null>(null);
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  function showNotice(text: string, action?: Notice['action']) {
+    notice = { text, action };
+    clearTimeout(noticeTimer);
+    // Notices with an action stay until the user acts or closes them.
+    if (!action) noticeTimer = setTimeout(() => (notice = null), 6000);
+  }
+
+  installState.init();
+  registerServiceWorker((apply) =>
+    showNotice(t('pwa.updateReady'), { label: t('pwa.update'), run: apply }),
+  );
+
+  // Android's system Back closes an open place card instead of leaving the app: opening
+  // a card adds one history entry, and going back removes the card.
+  const CARD_STATE = 'veil-card';
+  function pushCardEntry() {
+    if (history.state?.[CARD_STATE]) return;
+    history.pushState({ ...history.state, [CARD_STATE]: true }, '');
+  }
+  function closeCard() {
+    if (history.state?.[CARD_STATE]) history.back();
+    else search.deselect();
+  }
+  $effect(() => {
+    const onpopstate = () => {
+      if (!history.state?.[CARD_STATE] && search.selected) search.deselect();
+    };
+    window.addEventListener('popstate', onpopstate);
+    return () => window.removeEventListener('popstate', onpopstate);
+  });
   $effect(() => {
     if (locator.error) showNotice(t(`locate.${locator.error}`));
   });
@@ -124,6 +176,7 @@
       `${import.meta.env.BASE_URL}assets/icons.svg#star-filled`,
       (place) => {
         search.select(place);
+        pushCardEntry();
         if (!wide) snap = 'half';
       },
     );
@@ -156,10 +209,57 @@
       i18n.init(),
       searchPrefs.init(),
       savedPlaces.init(),
+      offlineRegions.init(),
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
-    source = await new PmtilesTileProvider(resolveUrl(config.tiles.world)).source();
+
+    registerTileProtocol();
+    worldMaxZoom = config.tiles.worldMaxZoom;
+    tileResolver.setWorld(resolveUrl(config.tiles.world), worldMaxZoom);
+    ready = true;
+    if (config.regions) {
+      try {
+        catalog = await loadCatalog(resolveUrl(config.regions));
+      } catch {
+        // Offline or no catalog: the world overview (and downloaded regions) still work.
+      }
+    }
+    offlineRegions.onchange = () => void updateArchives();
+    await updateArchives();
   }
+
+  /**
+   * Re-reads the set of tile archives (downloaded regions, regions on the server) and makes
+   * the map refetch its tiles.
+   */
+  async function updateArchives() {
+    const local: Archive[] = [];
+    for (const region of offlineRegions.complete) {
+      try {
+        const file = await offlineRegions.file(region.id);
+        local.push(localArchive(region.id, file, region.info.bbox, region.info.maxzoom));
+      } catch {
+        // The file is gone (e.g. storage was cleared): fall back to the network.
+      }
+    }
+    const remote = catalog.map((r) => remoteArchive(r.id, r.url, r.bbox, r.maxzoom));
+    tileResolver.setRegions([...local, ...remote]);
+    tilesVersion++;
+  }
+
+  // Hint where only the low-zoom overview exists.
+  $effect(() => {
+    if (!map) return;
+    const m = map;
+    const check = () => {
+      const c = m.getCenter();
+      noDetail = !tileResolver.hasDetail(c.lng, c.lat, m.getZoom());
+    };
+    void tilesVersion; // re-check when the set of archives changes (e.g. catalog loaded)
+    m.on('moveend', check);
+    check();
+    return () => m.off('moveend', check);
+  });
 
   init().catch((e: unknown) => (error = e instanceof Error ? e.message : String(e)));
 
@@ -193,6 +293,7 @@
     if (!map) return;
     return onLongPress(map, (point) => {
       void search.reverse(point);
+      pushCardEntry();
       if (!wide && snap === 'collapsed') snap = 'half';
     });
   });
@@ -216,6 +317,7 @@
   /** Picks a search result: shows it and moves the map to it. */
   function pick(place: Place) {
     search.select(place);
+    pushCardEntry();
     cameraOnUser = false;
     locator.stopFollow();
     if (!wide) {
@@ -247,7 +349,7 @@
       searchInput?.focus();
     } else if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
       if (document.activeElement === searchInput) searchInput?.blur();
-      else if (search.selected) search.deselect();
+      else if (search.selected) closeCard();
       else snap = 'collapsed';
     }
   }
@@ -265,11 +367,24 @@
       {/if}
       {#if notice}
         <p class="notice" role="alert">
-          <span>{notice}</span>
+          <span>{notice.text}</span>
+          {#if notice.action}
+            <button
+              class="action"
+              type="button"
+              onclick={() => {
+                notice?.action?.run();
+                notice = null;
+              }}>{notice.action.label}</button
+            >
+          {/if}
           <button type="button" aria-label={t('common.close')} onclick={() => (notice = null)}>
             <Icon name="close" />
           </button>
         </p>
+      {/if}
+      {#if noDetail && !notice}
+        <p class="no-detail" role="status">{t('tiles.noDetail')}</p>
       {/if}
       <div class="corner">
         <MapControls
@@ -287,12 +402,19 @@
     </div>
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
-      <SearchPanel {search} onEnterOnly={searchPrefs.onEnter} onpick={pick} onnotice={showNotice} />
+      <SearchPanel
+        {search}
+        onEnterOnly={searchPrefs.onEnter}
+        onpick={pick}
+        oncloseplace={closeCard}
+        onnotice={showNotice}
+      />
     </Sheet>
   </div>
 </div>
 
-<SettingsDialog bind:this={settings} />
+<SettingsDialog bind:this={settings} onoffline={() => offlineDialog.open()} />
+<OfflineDialog bind:this={offlineDialog} {catalog} />
 
 <style>
   .shell {
@@ -354,8 +476,32 @@
     box-shadow: var(--shadow-lg);
   }
 
+  .no-detail {
+    position: absolute;
+    top: calc(72px + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 1;
+    margin: 0;
+    padding: 6px 12px;
+    transform: translateX(-50%);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
   .notice span {
     flex: 1;
+  }
+
+  .notice .action {
+    width: auto;
+    padding: 0 12px;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font: inherit;
   }
 
   .notice button {
@@ -405,7 +551,8 @@
       transition: none;
     }
 
-    .notice {
+    .notice,
+    .no-detail {
       top: 16px;
     }
   }

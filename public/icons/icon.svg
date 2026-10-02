@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Veil: a map pin half covered by a translucent veil. Placeholder logo. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b6fe0"/>
+      <stop offset="1" stop-color="#0b4fa8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M256 92c-66 0-118 52-118 117 0 86 118 211 118 211s118-125 118-211c0-65-52-117-118-117Z" fill="#fff"/>
+  <circle cx="256" cy="208" r="44" fill="#0b5fcc"/>
+  <path d="M84 300c58-58 118-86 172-86s114 28 172 86v84c-29 22-57 22-86 0s-57-22-86 0-57 22-86 0-57-22-86 0Z" fill="#fff" fill-opacity=".3"/>
+  <path d="M84 300c58-58 118-86 172-86s114 28 172 86" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="10" stroke-linecap="round"/>
+</svg>

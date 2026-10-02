@@ -1,6 +1,12 @@
 /** Runtime configuration, loaded from public/config.json (not baked into the build). */
 export interface AppConfig {
-  tiles: { world: string };
+  tiles: {
+    /** PMTiles archive of the whole planet at low zooms (the base layer). */
+    world: string;
+    /** Its max zoom; beyond it, detail comes from regions. */
+    worldMaxZoom: number;
+  };
+  /** URL of the region catalog (regions/index.json), or null for none. */
   regions: string | null;
   geocoder: {
     type: 'photon';

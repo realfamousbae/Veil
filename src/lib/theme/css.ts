@@ -20,4 +20,8 @@ export function applyTheme(theme: Theme, root: HTMLElement = document.documentEl
   }
   root.style.colorScheme = theme.scheme;
   root.dataset['theme'] = theme.id;
+  // Browser UI and the status bar of the installed app follow the theme.
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', theme.ui.color.surface);
 }
