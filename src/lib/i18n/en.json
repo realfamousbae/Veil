@@ -59,5 +59,6 @@
   "pwa.install": "Install Veil",
   "pwa.installHint": "Works offline and keeps your data safe from automatic cleanup.",
   "pwa.iosHint": "In Safari, tap Share, then “Add to Home Screen”.",
-  "pwa.otherHint": "Use your browser menu: “Install app” or “Add to Home screen”."
+  "pwa.otherHint": "Use your browser menu: “Install app” or “Add to Home screen”.",
+  "tiles.noDetail": "No detailed map for this area yet."
 }

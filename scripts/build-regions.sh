@@ -6,7 +6,8 @@
 #   scripts/build-regions.sh [--dry-run] [--build YYYYMMDD] [--out DIR] [--maxzoom N] ID...
 #
 # Region definitions live in scripts/regions.tsv. Writes DIR/<id>.pmtiles and
-# DIR/index.json (catalog for the "Offline maps" screen, PLAN.md §7).
+# DIR/index.json (catalog for the "Offline maps" screen, PLAN.md §7). The whole-planet
+# overview (bbox "-") is written but not listed: it is the base layer, not a region.
 # Requires: pmtiles CLI (brew install pmtiles), node.
 set -euo pipefail
 
@@ -69,6 +70,9 @@ for id in "${IDS[@]}"; do
   file="$OUT/$id.pmtiles"
   pmtiles extract "$SRC" "$file" "${args[@]}"
   size="$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")"
+
+  # The planet overview is the base layer (config.json → tiles.world), not a region.
+  [[ "$bbox" == "-" ]] && continue
 
   ID="$id" NAME_EN="$name_en" NAME_RU="$name_ru" BBOX="$bbox" MAXZOOM="$maxzoom" \
     SIZE="$size" BUILD="$BUILD" INDEX="$INDEX" node -e '

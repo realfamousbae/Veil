@@ -1,5 +1,3 @@
-import type { VectorSourceSpecification } from '@maplibre/maplibre-gl-style-spec';
-
 export interface LngLat {
   lng: number;
   lat: number;
@@ -23,11 +21,6 @@ export interface Place {
   osm?: { type: OsmType; id: number };
   /** Bounding box [minLng, minLat, maxLng, maxLat] for areas such as cities. */
   extent?: [number, number, number, number];
-}
-
-export interface TileProvider {
-  /** Returns a MapLibre source definition for the base map. */
-  source(): Promise<VectorSourceSpecification>;
 }
 
 export interface GeocodeProvider {

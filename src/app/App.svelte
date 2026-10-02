@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { VectorSourceSpecification } from '@maplibre/maplibre-gl-style-spec';
   import { Marker, type Map } from 'maplibre-gl';
   import { untrack } from 'svelte';
   import Attribution from '../components/Attribution.svelte';
@@ -22,11 +21,12 @@
   import { installState } from '../lib/pwa/install.svelte';
   import { registerServiceWorker } from '../lib/pwa/register';
   import { PhotonGeocodeProvider } from '../lib/providers/photon';
-  import { PmtilesTileProvider } from '../lib/providers/pmtiles';
   import type { GeocodeProvider, Place } from '../lib/providers/types';
   import { readPlaceFromHash, writePlaceToHash } from '../lib/search/place-hash';
   import { searchPrefs } from '../lib/search/prefs.svelte';
   import { SearchState } from '../lib/search/search.svelte';
+  import { loadCatalog, type RegionInfo } from '../lib/tiles/catalog';
+  import { registerTileProtocol, remoteArchive, tileResolver } from '../lib/tiles/resolver';
   import { applyTheme } from '../lib/theme/css';
   import { themeState } from '../lib/theme/theme.svelte';
 
@@ -35,7 +35,11 @@
   const assetsBase = resolveUrl(`${import.meta.env.BASE_URL}assets/`);
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let source = $state.raw<VectorSourceSpecification>();
+  let ready = $state(false);
+  let worldMaxZoom = $state(0);
+  let tilesVersion = $state(0);
+  let catalog = $state.raw<RegionInfo[]>([]);
+  let noDetail = $state(false);
   let geocoder = $state.raw<GeocodeProvider>();
   let error = $state<string>();
   let map = $state.raw<Map>();
@@ -55,7 +59,15 @@
 
   const wide = $derived(width >= WIDE);
   const style = $derived(
-    source && buildStyle({ source, theme: themeState.current, lang: i18n.locale, assetsBase }),
+    ready
+      ? buildStyle({
+          theme: themeState.current,
+          lang: i18n.locale,
+          assetsBase,
+          worldMaxZoom,
+          tilesVersion,
+        })
+      : undefined,
   );
 
   const search = new SearchState({
@@ -190,8 +202,39 @@
       savedPlaces.init(),
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
-    source = await new PmtilesTileProvider(resolveUrl(config.tiles.world)).source();
+
+    registerTileProtocol();
+    worldMaxZoom = config.tiles.worldMaxZoom;
+    tileResolver.setWorld(resolveUrl(config.tiles.world), worldMaxZoom);
+    ready = true;
+    if (config.regions) {
+      try {
+        catalog = await loadCatalog(resolveUrl(config.regions));
+      } catch {
+        // Offline or no catalog: the world overview (and downloaded regions) still work.
+      }
+    }
+    updateArchives();
   }
+
+  /** Re-reads the set of tile archives and makes the map refetch its tiles. */
+  function updateArchives() {
+    tileResolver.setRegions(catalog.map((r) => remoteArchive(r.id, r.url, r.bbox, r.maxzoom)));
+    tilesVersion++;
+  }
+
+  // Hint where only the low-zoom overview exists.
+  $effect(() => {
+    if (!map) return;
+    const m = map;
+    const check = () => {
+      const c = m.getCenter();
+      noDetail = !tileResolver.hasDetail(c.lng, c.lat, m.getZoom());
+    };
+    m.on('moveend', check);
+    check();
+    return () => m.off('moveend', check);
+  });
 
   init().catch((e: unknown) => (error = e instanceof Error ? e.message : String(e)));
 
@@ -315,6 +358,9 @@
           </button>
         </p>
       {/if}
+      {#if noDetail && !notice}
+        <p class="no-detail" role="status">{t('tiles.noDetail')}</p>
+      {/if}
       <div class="corner">
         <MapControls
           {map}
@@ -404,6 +450,22 @@
     box-shadow: var(--shadow-lg);
   }
 
+  .no-detail {
+    position: absolute;
+    top: calc(72px + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 1;
+    margin: 0;
+    padding: 6px 12px;
+    transform: translateX(-50%);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
   .notice span {
     flex: 1;
   }
@@ -463,7 +525,8 @@
       transition: none;
     }
 
-    .notice {
+    .notice,
+    .no-detail {
       top: 16px;
     }
   }

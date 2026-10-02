@@ -1,6 +1,6 @@
 {
-  "tiles": { "world": "/dev/moscow-center.pmtiles" },
-  "regions": null,
+  "tiles": { "world": "/dev/world.pmtiles", "worldMaxZoom": 5 },
+  "regions": "/dev/index.json",
   "geocoder": { "type": "photon", "url": "https://photon.komoot.io", "langs": ["en", "de", "fr"] },
   "server": null
 }
