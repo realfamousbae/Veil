@@ -17,7 +17,9 @@ curl -fsSL "https://codeload.github.com/protomaps/basemaps-assets/tar.gz/$REV" |
 rm -rf "$DEST/fonts" "$DEST/sprites"
 mkdir -p "$DEST/sprites"
 cp -R "$TMP/fonts" "$DEST/fonts"
-cp -R "$TMP/sprites/v4" "$DEST/sprites/v4"
+# Only the light and dark sheets contain POI icons; the others are unused.
+mkdir -p "$DEST/sprites/v4"
+cp "$TMP"/sprites/v4/{light,dark}{,@2x}.{json,png} "$DEST/sprites/v4/"
 echo "$REV" > "$DEST/BASEMAPS_ASSETS_REV"
 
 du -sh "$DEST/fonts" "$DEST/sprites"

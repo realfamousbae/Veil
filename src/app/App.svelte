@@ -19,6 +19,8 @@
   import { buildStyle } from '../lib/map/style';
   import { SavedPlaceMarkers } from '../lib/places/markers';
   import { savedPlaces } from '../lib/places/saved.svelte';
+  import { installState } from '../lib/pwa/install.svelte';
+  import { registerServiceWorker } from '../lib/pwa/register';
   import { PhotonGeocodeProvider } from '../lib/providers/photon';
   import { PmtilesTileProvider } from '../lib/providers/pmtiles';
   import type { GeocodeProvider, Place } from '../lib/providers/types';
@@ -104,13 +106,42 @@
     return () => m.off('dragstart', leave);
   });
 
-  let notice = $state<string | null>(null);
-  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
-  function showNotice(text: string) {
-    notice = text;
-    clearTimeout(noticeTimer);
-    noticeTimer = setTimeout(() => (notice = null), 6000);
+  interface Notice {
+    text: string;
+    action?: { label: string; run: () => void };
   }
+  let notice = $state<Notice | null>(null);
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  function showNotice(text: string, action?: Notice['action']) {
+    notice = { text, action };
+    clearTimeout(noticeTimer);
+    // Notices with an action stay until the user acts or closes them.
+    if (!action) noticeTimer = setTimeout(() => (notice = null), 6000);
+  }
+
+  installState.init();
+  registerServiceWorker((apply) =>
+    showNotice(t('pwa.updateReady'), { label: t('pwa.update'), run: apply }),
+  );
+
+  // Android's system Back closes an open place card instead of leaving the app: opening
+  // a card adds one history entry, and going back removes the card.
+  const CARD_STATE = 'veil-card';
+  function pushCardEntry() {
+    if (history.state?.[CARD_STATE]) return;
+    history.pushState({ ...history.state, [CARD_STATE]: true }, '');
+  }
+  function closeCard() {
+    if (history.state?.[CARD_STATE]) history.back();
+    else search.deselect();
+  }
+  $effect(() => {
+    const onpopstate = () => {
+      if (!history.state?.[CARD_STATE] && search.selected) search.deselect();
+    };
+    window.addEventListener('popstate', onpopstate);
+    return () => window.removeEventListener('popstate', onpopstate);
+  });
   $effect(() => {
     if (locator.error) showNotice(t(`locate.${locator.error}`));
   });
@@ -124,6 +155,7 @@
       `${import.meta.env.BASE_URL}assets/icons.svg#star-filled`,
       (place) => {
         search.select(place);
+        pushCardEntry();
         if (!wide) snap = 'half';
       },
     );
@@ -193,6 +225,7 @@
     if (!map) return;
     return onLongPress(map, (point) => {
       void search.reverse(point);
+      pushCardEntry();
       if (!wide && snap === 'collapsed') snap = 'half';
     });
   });
@@ -216,6 +249,7 @@
   /** Picks a search result: shows it and moves the map to it. */
   function pick(place: Place) {
     search.select(place);
+    pushCardEntry();
     cameraOnUser = false;
     locator.stopFollow();
     if (!wide) {
@@ -247,7 +281,7 @@
       searchInput?.focus();
     } else if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
       if (document.activeElement === searchInput) searchInput?.blur();
-      else if (search.selected) search.deselect();
+      else if (search.selected) closeCard();
       else snap = 'collapsed';
     }
   }
@@ -265,7 +299,17 @@
       {/if}
       {#if notice}
         <p class="notice" role="alert">
-          <span>{notice}</span>
+          <span>{notice.text}</span>
+          {#if notice.action}
+            <button
+              class="action"
+              type="button"
+              onclick={() => {
+                notice?.action?.run();
+                notice = null;
+              }}>{notice.action.label}</button
+            >
+          {/if}
           <button type="button" aria-label={t('common.close')} onclick={() => (notice = null)}>
             <Icon name="close" />
           </button>
@@ -287,7 +331,13 @@
     </div>
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
-      <SearchPanel {search} onEnterOnly={searchPrefs.onEnter} onpick={pick} onnotice={showNotice} />
+      <SearchPanel
+        {search}
+        onEnterOnly={searchPrefs.onEnter}
+        onpick={pick}
+        oncloseplace={closeCard}
+        onnotice={showNotice}
+      />
     </Sheet>
   </div>
 </div>
@@ -356,6 +406,14 @@
 
   .notice span {
     flex: 1;
+  }
+
+  .notice .action {
+    width: auto;
+    padding: 0 12px;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font: inherit;
   }
 
   .notice button {

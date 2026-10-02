@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // The first load also installs the service worker (precaches ~3 MB) in parallel workers.
+  expect: { timeout: 10_000 },
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   reporter: process.env['CI'] ? 'github' : 'list',

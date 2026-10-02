@@ -1,8 +1,66 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [
+    svelte(),
+    VitePWA({
+      // Registered from src/lib/pwa/register.ts; updates are offered, never forced mid-use.
+      injectRegister: false,
+      registerType: 'prompt',
+      includeManifestIcons: false, // already matched by globPatterns
+      manifest: {
+        id: './',
+        name: 'Veil',
+        short_name: 'Veil',
+        description: 'A private map of the world. No accounts, no tracking.',
+        lang: 'en',
+        start_url: './',
+        scope: './',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#ffffff',
+        categories: ['navigation', 'travel', 'utilities'],
+        icons: [
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: [
+          '**/*.{js,css,html,svg,png}',
+          'assets/sprites/**/*.json',
+          // Glyph ranges for Latin and Cyrillic labels; others are cached on first use.
+          'assets/fonts/Noto Sans {Regular,Medium,Italic}/{0-255,256-511,1024-1279,8192-8447}.pbf',
+        ],
+        globIgnores: ['dev/**'],
+        navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            // Runtime config may change on the server; use the cached copy only offline.
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && /\/(config|regions\/index|dev\/index)\.json$/.test(url.pathname),
+            handler: 'NetworkFirst',
+            options: { cacheName: 'config', networkTimeoutSeconds: 4 },
+          },
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.endsWith('.pbf'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'glyphs', expiration: { maxEntries: 400 } },
+          },
+          // Tiles (.pmtiles range requests) and geocoder responses are never cached here:
+          // offline tiles live in OPFS, and search results must be fresh.
+        ],
+      },
+    }),
+  ],
   worker: {
     format: 'es',
   },

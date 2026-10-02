@@ -51,5 +51,13 @@
   "places.import": "Импорт",
   "places.imported": "Импортировано: {added}. Уже были: {skipped}. Не распознано: {invalid}.",
   "places.importFailed": "Файл не похож на GeoJSON с точками.",
-  "places.importTooLarge": "Файл слишком большой (не больше 5 МБ)."
+  "places.importTooLarge": "Файл слишком большой (не больше 5 МБ).",
+  "pwa.updateReady": "Готова новая версия Veil.",
+  "pwa.update": "Обновить",
+  "settings.app": "Приложение",
+  "pwa.installed": "Veil установлен как приложение.",
+  "pwa.install": "Установить Veil",
+  "pwa.installHint": "Работает без сети, а данные не удаляются автоматически.",
+  "pwa.iosHint": "В Safari нажмите «Поделиться», затем «На экран „Домой“».",
+  "pwa.otherHint": "Откройте меню браузера: «Установить приложение» или «Добавить на главный экран»."
 }
