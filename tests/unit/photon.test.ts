@@ -99,9 +99,10 @@ describe('PhotonGeocodeProvider', () => {
     expect(new URL(fetch.mock.calls[0]?.[0] ?? '').searchParams.get('lang')).toBe('ru');
   });
 
-  it('removes duplicate results', async () => {
-    const f = feature({ name: 'A', osm_type: 'W', osm_id: 1 });
-    mockFetch([f, f]);
+  it('removes duplicate and indistinguishable results', async () => {
+    const f = feature({ name: 'A', city: 'X', osm_type: 'W', osm_id: 1 });
+    const lookalike = feature({ name: 'A', city: 'X', osm_type: 'W', osm_id: 2 });
+    mockFetch([f, f, lookalike]);
     const results = await new PhotonGeocodeProvider('https://photon.test').search('aaa', {
       lang: 'en',
       signal,

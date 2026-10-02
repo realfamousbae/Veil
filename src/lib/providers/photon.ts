@@ -107,9 +107,15 @@ export class PhotonGeocodeProvider implements GeocodeProvider {
       params.set('lon', String(b.lng));
     }
     const places = (await this.get(`/api?${params}`, opts.signal)).map(toPlace);
-    // Photon may return the same object more than once.
-    const ids = new Set<string>();
-    return places.filter((p) => !ids.has(p.id) && !!ids.add(p.id));
+    // Drop repeats: the same object, or different OSM objects that would look identical
+    // in the list (e.g. a square mapped as an area and as several pedestrian ways).
+    const seen = new Set<string>();
+    return places.filter((p) => {
+      const keys = [p.id, `${p.name}\n${p.description ?? ''}`];
+      if (keys.some((k) => seen.has(k))) return false;
+      keys.forEach((k) => seen.add(k));
+      return true;
+    });
   }
 
   async reverse(point: LngLat, opts: { lang: string; signal: AbortSignal }): Promise<Place | null> {
