@@ -12,11 +12,13 @@
   import { loadConfig, resolveUrl } from '../lib/config';
   import { Locator, type Fix } from '../lib/geolocation/locator.svelte';
   import { UserLocationMarker } from '../lib/geolocation/marker';
-  import { i18n, t, type MessageKey } from '../lib/i18n/i18n.svelte';
+  import { i18n, t } from '../lib/i18n/i18n.svelte';
   import { readCameraFromHash, syncCameraHash, type Camera } from '../lib/map/hash';
   import { onLongPress } from '../lib/map/long-press';
   import MapView from '../lib/map/MapView.svelte';
   import { buildStyle } from '../lib/map/style';
+  import { SavedPlaceMarkers } from '../lib/places/markers';
+  import { savedPlaces } from '../lib/places/saved.svelte';
   import { PhotonGeocodeProvider } from '../lib/providers/photon';
   import { PmtilesTileProvider } from '../lib/providers/pmtiles';
   import type { GeocodeProvider, Place } from '../lib/providers/types';
@@ -75,6 +77,7 @@
     map.easeTo({
       center: [fix.lng, fix.lat],
       zoom: follow ? map.getZoom() : Math.max(map.getZoom(), 15),
+      padding: cameraPadding(),
       duration,
     });
   }
@@ -101,12 +104,38 @@
     return () => m.off('dragstart', leave);
   });
 
-  let notice = $state<MessageKey | null>(null);
+  let notice = $state<string | null>(null);
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  function showNotice(text: string) {
+    notice = text;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => (notice = null), 6000);
+  }
   $effect(() => {
-    if (!locator.error) return;
-    notice = `locate.${locator.error}`;
-    const timer = setTimeout(() => (notice = null), 6000);
-    return () => clearTimeout(timer);
+    if (locator.error) showNotice(t(`locate.${locator.error}`));
+  });
+
+  // Saved places on the map; tapping one opens its card.
+  let savedMarkers = $state.raw<SavedPlaceMarkers>();
+  $effect(() => {
+    if (!map) return;
+    const markers = new SavedPlaceMarkers(
+      map,
+      `${import.meta.env.BASE_URL}assets/icons.svg#star-filled`,
+      (place) => {
+        search.select(place);
+        if (!wide) snap = 'half';
+      },
+    );
+    savedMarkers = markers;
+    return () => markers.remove();
+  });
+  $effect(() => {
+    savedMarkers?.update(
+      savedPlaces.list,
+      search.selected?.id ?? null,
+      (p) => p.name || t('place.point'),
+    );
   });
 
   const restored = readPlaceFromHash();
@@ -126,6 +155,7 @@
       themeState.init(),
       i18n.init(),
       searchPrefs.init(),
+      savedPlaces.init(),
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
     source = await new PmtilesTileProvider(resolveUrl(config.tiles.world)).source();
@@ -176,6 +206,13 @@
     });
   });
 
+  /** Keeps a camera target clear of the search bar and the open sheet on phones. */
+  function cameraPadding() {
+    if (wide) return 48;
+    const bottom = snap === 'collapsed' ? sheetHeight : Math.round(height * 0.5);
+    return { top: 80, bottom: bottom + 16, left: 32, right: 32 };
+  }
+
   /** Picks a search result: shows it and moves the map to it. */
   function pick(place: Place) {
     search.select(place);
@@ -186,9 +223,7 @@
       snap = 'half';
     }
     if (!map) return;
-    const padding = wide
-      ? 48
-      : { top: 80, bottom: Math.round(height * 0.5) + 16, left: 32, right: 32 };
+    const padding = cameraPadding();
     const duration = reducedMotion() ? 0 : 800;
     const [w, s, e, n] = place.extent ?? [];
     if (w !== undefined && s !== undefined && e !== undefined && n !== undefined && w !== e) {
@@ -230,7 +265,7 @@
       {/if}
       {#if notice}
         <p class="notice" role="alert">
-          <span>{t(notice)}</span>
+          <span>{notice}</span>
           <button type="button" aria-label={t('common.close')} onclick={() => (notice = null)}>
             <Icon name="close" />
           </button>
@@ -252,7 +287,7 @@
     </div>
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
-      <SearchPanel {search} onEnterOnly={searchPrefs.onEnter} onpick={pick} />
+      <SearchPanel {search} onEnterOnly={searchPrefs.onEnter} onpick={pick} onnotice={showNotice} />
     </Sheet>
   </div>
 </div>

@@ -8,7 +8,11 @@
     | 'check'
     | 'back'
     | 'locate'
-    | 'locate-follow';
+    | 'locate-follow'
+    | 'star'
+    | 'star-filled'
+    | 'download'
+    | 'upload';
 
   let { name }: { name: IconName } = $props();
   const href = $derived(`${import.meta.env.BASE_URL}assets/icons.svg#${name}`);
