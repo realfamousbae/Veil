@@ -1,0 +1,11 @@
+name: Set up pmtiles CLI
+description: Installs the pinned go-pmtiles release.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        VERSION=1.31.2
+        curl -fsSL "https://github.com/protomaps/go-pmtiles/releases/download/v${VERSION}/go-pmtiles_${VERSION}_Linux_x86_64.tar.gz" \
+          | sudo tar -xz -C /usr/local/bin pmtiles
+        pmtiles version

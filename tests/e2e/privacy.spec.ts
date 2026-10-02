@@ -1,0 +1,156 @@
+// The privacy contract of PLAN.md §5, checked end to end on the production build.
+import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+const config = JSON.parse(readFileSync('dist/config.json', 'utf8'));
+const headersFile = readFileSync('dist/_headers', 'utf8');
+
+/** External origins the config points at: the only third parties allowed. */
+function configOrigins(value: unknown): string[] {
+  if (typeof value === 'string') return /^https?:\/\//.test(value) ? [new URL(value).origin] : [];
+  if (value && typeof value === 'object') return Object.values(value).flatMap(configOrigins);
+  return [];
+}
+
+/** The production headers for every path ("/*" block of dist/_headers). */
+function productionHeaders(): Record<string, string> {
+  const block = headersFile.split(/\n(?=\S)/).find((b) => b.startsWith('/*')) ?? '';
+  return Object.fromEntries(
+    block
+      .split('\n')
+      .slice(1)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => [l.slice(0, l.indexOf(':')), l.slice(l.indexOf(':') + 1).trim()]),
+  );
+}
+
+// Routes must see every request (a service worker would answer some of them itself).
+test.use({ viewport: { width: 1280, height: 800 }, locale: 'en-US', serviceWorkers: 'block' });
+
+async function enforceProductionHeaders(page: Page, origin: string) {
+  const headers = productionHeaders();
+  expect(headers['Content-Security-Policy']).toContain("default-src 'self'");
+  await page.route(`${origin}/**`, async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, headers: { ...response.headers(), ...headers } });
+  });
+  await page.addInitScript(() => {
+    const violations: string[] = [];
+    (window as unknown as { cspViolations: string[] }).cspViolations = violations;
+    document.addEventListener('securitypolicyviolation', (e) =>
+      violations.push(`${e.violatedDirective} ${e.blockedURI}`),
+    );
+  });
+}
+
+test('only allow-listed hosts are contacted, nothing is stored outside the device', async ({
+  page,
+  baseURL,
+}) => {
+  const origin = new URL(baseURL ?? '').origin;
+  const allowed = new Set([origin, ...configOrigins(config)]);
+  const requests: URL[] = [];
+  page.on('request', (r) => {
+    const url = new URL(r.url());
+    if (url.protocol === 'http:' || url.protocol === 'https:') requests.push(url);
+  });
+
+  await enforceProductionHeaders(page, origin);
+  await page.route('https://photon.komoot.io/**', (r) =>
+    r.fulfill({
+      json: {
+        features: [
+          {
+            geometry: { coordinates: [37.6215, 55.7536] },
+            properties: { name: 'Red Square', osm_type: 'W', osm_id: 1 },
+          },
+        ],
+      },
+    }),
+  );
+
+  // Load: no third party at all.
+  await page.goto('/#map=14/55.75/37.62');
+  await expect(page.locator('.maplibregl-map[data-ready="true"]')).toBeVisible();
+  expect(requests.filter((u) => u.origin !== origin)).toEqual([]);
+
+  // Move the map around.
+  await page.mouse.move(800, 400);
+  await page.mouse.down();
+  await page.mouse.move(650, 320, { steps: 8 });
+  await page.mouse.up();
+  await page.mouse.wheel(0, -400);
+  await page.getByRole('button', { name: 'Zoom out' }).click();
+
+  // Search, open a result, save it.
+  const search = page.getByRole('combobox', { name: 'Search' });
+  await search.fill('Red Square');
+  await page.getByRole('option', { name: /Red Square/ }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  // "What's here?"
+  await page.keyboard.press('Escape');
+  await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 300, y: 300 } });
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
+
+  // Switch theme and language.
+  await page.getByRole('button', { name: 'Map settings' }).click();
+  await page.getByLabel('Paper').check();
+  await page.getByLabel('Русский').check();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(1000);
+
+  // 1. Only allow-listed hosts (§5.1, §5.8).
+  const foreign = requests.filter((u) => !allowed.has(u.origin)).map((u) => u.href);
+  expect(foreign).toEqual([]);
+
+  // 2. The geocoder got only the query and a rounded bias (§5.5).
+  const photon = requests.filter((u) => u.hostname === 'photon.komoot.io');
+  expect(photon.length).toBeGreaterThan(0);
+  for (const u of photon.filter((p) => p.pathname === '/api')) {
+    for (const key of ['lat', 'lon']) {
+      const v = u.searchParams.get(key);
+      if (v !== null) expect(v, key).toMatch(/^-?\d+(\.\d)?$/);
+    }
+  }
+
+  // 3. No cookies, no web storage (§5.3); IndexedDB is fine and stays on the device.
+  expect(await page.context().cookies()).toEqual([]);
+  expect(
+    await page.evaluate(() => ({
+      cookie: document.cookie,
+      local: localStorage.length,
+      session: sessionStorage.length,
+    })),
+  ).toEqual({ cookie: '', local: 0, session: 0 });
+
+  // 4. The app works under the production CSP.
+  expect(
+    await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations),
+  ).toEqual([]);
+});
+
+test('the production headers are strict', () => {
+  const h = productionHeaders();
+  expect(h['Referrer-Policy']).toBe('no-referrer');
+  expect(h['X-Content-Type-Options']).toBe('nosniff');
+  expect(h['Permissions-Policy']).toContain('geolocation=(self)');
+  expect(h['Permissions-Policy']).toContain('camera=()');
+  const csp = h['Content-Security-Policy'] ?? '';
+  expect(csp).toContain("frame-ancestors 'none'");
+  expect(csp).not.toContain("'unsafe-inline'");
+  expect(csp).not.toContain("'unsafe-eval'");
+  const connect = /connect-src ([^;]+)/.exec(csp)?.[1]?.split(' ') ?? [];
+  expect(connect.sort()).toEqual(["'self'", ...new Set(configOrigins(config))].sort());
+});
+
+test('the Privacy page names this deployment’s hosts', async ({ page, baseURL }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Map settings' }).click();
+  await page.getByRole('button', { name: 'Privacy' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Privacy' });
+  await expect(dialog).toContainText('no cookies, no analytics');
+  await expect(dialog).toContainText(`(${new URL(baseURL ?? '').host})`);
+  await expect(dialog).toContainText(`(${new URL(config.geocoder.url).host})`);
+});

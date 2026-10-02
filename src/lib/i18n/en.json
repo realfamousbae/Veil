@@ -79,5 +79,17 @@
   "offline.error.corrupt": "The downloaded file was damaged. Please download it again.",
   "offline.error.storage": "Not enough storage space on this device.",
   "offline.error.space": "Not enough storage space: the browser allows {free}.",
-  "offline.error.unsupported": "This browser can't store maps for offline use."
+  "offline.error.unsupported": "This browser can't store maps for offline use.",
+  "privacy.open": "Privacy",
+  "privacy.title": "Privacy",
+  "privacy.intro": "Veil collects no data about you: no accounts, no cookies, no analytics, no ads.",
+  "privacy.deviceTitle": "Stored on this device only",
+  "privacy.device": "Your settings, saved places and downloaded regions. They never leave this browser and are deleted together with the site's data.",
+  "privacy.whoTitle": "Who sees what",
+  "privacy.hosting": "The server of this site ({host}) sees your IP address and which parts of the map are loaded — from that, one can tell which areas you look at. Downloaded regions load from your device and remove these requests.",
+  "privacy.search": "The search service ({host}) sees your IP address and what you type. With “Prefer results near the map area” on, it also gets an approximate area (about 10 km); with “What’s here?”, the point you chose. Turn on “Search only when I press Enter” to send less.",
+  "privacy.location": "Your location is requested only when you tap “Show my location”. It stays on this device: it is never sent to a server and never put into the page address.",
+  "privacy.links": "Links to OpenStreetMap open a third-party website.",
+  "privacy.selfHostTitle": "No third parties at all",
+  "privacy.selfHost": "Veil can run on your own server, with your own map files and search. Then nobody else is involved."
 }
