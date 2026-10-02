@@ -17,8 +17,10 @@ export function externalOrigins(config) {
 }
 
 /**
- * "! Name" removes a header the host adds on its own: Cloudflare's Network Error Logging
- * (NEL, Report-To) makes browsers send error reports to a third-party host.
+ * "! Name" asks the host to drop a header it adds on its own: Cloudflare's Network Error
+ * Logging (NEL, Report-To) makes browsers send error reports to a.nel.cloudflare.com.
+ * Note: on a shared *.pages.dev domain Cloudflare still adds them (it is a zone setting,
+ * available with your own domain); PRIVACY.md says so.
  */
 export function buildHeaders(config) {
   const connect = ["'self'", ...externalOrigins(config)].join(' ');
