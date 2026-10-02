@@ -4,3 +4,9 @@ body,
   height: 100%;
   margin: 0;
 }
+
+body {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
