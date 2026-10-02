@@ -2,7 +2,12 @@
 export interface AppConfig {
   tiles: { world: string };
   regions: string | null;
-  geocoder: { type: 'photon'; url: string };
+  geocoder: {
+    type: 'photon';
+    url: string;
+    /** Result languages the instance supports besides "default" (local names). */
+    langs?: string[];
+  };
   /** Base URL of the optional self-hosted server; null disables account features. */
   server: string | null;
 }
