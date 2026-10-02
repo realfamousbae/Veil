@@ -98,19 +98,31 @@ The runtime `public/config.json` points at the map files and the geocoder, so a 
 change them without rebuilding. The site address for link previews is set in `.env`
 (`VITE_SITE_URL`).
 
-## Deploy and self-hosting
+## Running your own instance
 
-The demo runs on Cloudflare's free tier with no custom domain; the step-by-step setup is in the
-[Russian README](README.md#развёртывание-cloudflare-pages--r2). Any static web server with HTTP
-Range support works too: serve `dist/` and the `.pmtiles` files and point `config.json` at them.
-For search without third parties, run your own [Photon](https://github.com/komoot/photon).
+Your own instance removes third parties entirely: both the map and search run on your server.
+The full step-by-step guide (build, cutting map files, your own Photon search, `config.json`,
+nginx with security headers, checks) is in the
+[Russian README](README.md#развёртка-собственного-сервиса). In short:
+
+```bash
+git clone https://github.com/realfamousbae/Veil.git && cd Veil && pnpm install && pnpm build
+scripts/build-regions.sh --out /srv/veil/tiles world          # planet overview, ~190 MB
+scripts/build-regions.sh --out /srv/veil/tiles moscow-oblast  # or your region from scripts/regions.tsv
+java -Xmx8G -jar photon-1.3.0.jar serve -listen-ip 127.0.0.1  # optional: your own search
+```
+
+Serve `dist/` and the `.pmtiles` files over HTTPS with any web server that supports HTTP Range
+requests, proxy Photon at `/geo/`, set `"geocoder": { "url": "/geo" }` in `dist/config.json`
+and copy the CSP from `dist/_headers` (`node scripts/build-headers.mjs`) into your server
+config. See also the [liability section](#security-and-liability).
 
 ## Credits
 
 - Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL.
 - Basemap style and builds by [Protomaps](https://protomaps.com/) (BSD-3-Clause), rendering by [MapLibre](https://maplibre.org/).
 - Search by [Photon](https://github.com/komoot/photon) from komoot.
-- Glass material after [liquid-glass-svelte](https://github.com/Tozaburo/liquid-glass-svelte) (Tozaburo, MIT).
+- Liquid Glass–style design after [liquid-glass-svelte](https://github.com/Tozaburo/liquid-glass-svelte) (Tozaburo, MIT).
 - Fonts: [JetBrains Mono](https://www.jetbrains.com/lp/mono/) and Noto Sans (SIL OFL).
 
 ## License

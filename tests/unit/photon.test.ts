@@ -122,6 +122,12 @@ describe('PhotonGeocodeProvider', () => {
     expect(place?.osm).toEqual({ type: 'relation', id: 7 });
   });
 
+  it('works behind a same-origin proxy (relative URL)', async () => {
+    const fetch = mockFetch([]);
+    await new PhotonGeocodeProvider('/geo/').search('кафе', { lang: 'en', signal });
+    expect(fetch.mock.calls[0]?.[0]).toMatch(/^\/geo\/api\?q=/);
+  });
+
   it('throws on HTTP errors', async () => {
     vi.stubGlobal('fetch', async () => new Response('', { status: 429 }));
     await expect(
