@@ -1,0 +1,17 @@
+{
+  "app.map": "Карта",
+  "search.label": "Поиск",
+  "search.placeholder": "Поиск мест и адресов",
+  "panel.empty": "Найдите место или адрес — информация появится здесь.",
+  "sheet.expand": "Развернуть панель",
+  "sheet.collapse": "Свернуть панель",
+  "map.zoomIn": "Приблизить",
+  "map.zoomOut": "Отдалить",
+  "settings.open": "Настройки карты",
+  "settings.title": "Настройки",
+  "settings.theme": "Тема",
+  "settings.themeAuto": "Как в системе",
+  "settings.language": "Язык",
+  "settings.languageAuto": "Как в браузере",
+  "common.close": "Закрыть"
+}
