@@ -10,7 +10,7 @@ test.describe('desktop', () => {
     expect(await panel.boundingBox()).toMatchObject({ x: 0, width: 360 });
     await expect(page.getByRole('button', { name: 'Expand panel' })).toBeHidden();
 
-    const search = page.getByRole('searchbox', { name: 'Search' });
+    const search = page.getByRole('combobox', { name: 'Search' });
     await page.locator('body').press('/');
     await expect(search).toBeFocused();
     await expect(search).toHaveValue('');

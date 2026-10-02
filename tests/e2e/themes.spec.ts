@@ -46,5 +46,5 @@ test('switching language changes UI strings and the document language', async ({
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   await expect(page.getByRole('heading', { name: 'Настройки' })).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('searchbox', { name: 'Поиск' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Поиск' })).toBeVisible();
 });
