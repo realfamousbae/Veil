@@ -7,6 +7,7 @@
   import SearchBar from '../components/SearchBar.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
   import OfflineDialog from '../components/OfflineDialog.svelte';
+  import PrivacyDialog from '../components/PrivacyDialog.svelte';
   import SettingsDialog from '../components/SettingsDialog.svelte';
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
@@ -65,6 +66,8 @@
   let searchInput = $state<HTMLInputElement>();
   let settings: SettingsDialog;
   let offlineDialog: OfflineDialog;
+  let privacyDialog: PrivacyDialog;
+  let geocoderHost = $state('');
 
   const wide = $derived(width >= WIDE);
   const style = $derived(
@@ -212,6 +215,7 @@
       offlineRegions.init(),
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
+    geocoderHost = new URL(config.geocoder.url, location.href).host;
 
     registerTileProtocol();
     worldMaxZoom = config.tiles.worldMaxZoom;
@@ -413,7 +417,12 @@
   </div>
 </div>
 
-<SettingsDialog bind:this={settings} onoffline={() => offlineDialog.open()} />
+<SettingsDialog
+  bind:this={settings}
+  onoffline={() => offlineDialog.open()}
+  onprivacy={() => privacyDialog.open()}
+/>
+<PrivacyDialog bind:this={privacyDialog} siteHost={location.host} {geocoderHost} />
 <OfflineDialog bind:this={offlineDialog} {catalog} />
 
 <style>

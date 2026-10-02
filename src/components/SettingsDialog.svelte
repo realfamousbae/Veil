@@ -6,7 +6,7 @@
   import { themes } from '../themes';
   import Icon from './Icon.svelte';
 
-  let { onoffline }: { onoffline: () => void } = $props();
+  let { onoffline, onprivacy }: { onoffline: () => void; onprivacy: () => void } = $props();
   let dialog: HTMLDialogElement;
 
   export function open() {
@@ -93,12 +93,20 @@
   <section class="app" aria-labelledby="settings-app">
     <h3 id="settings-app">{t('settings.app')}</h3>
     <button
-      class="offline"
+      class="secondary"
       type="button"
       onclick={() => {
         dialog.close();
         onoffline();
       }}>{t('offline.open')}</button
+    >
+    <button
+      class="secondary"
+      type="button"
+      onclick={() => {
+        dialog.close();
+        onprivacy();
+      }}>{t('privacy.open')}</button
     >
     {#if installState.standalone}
       <p>{t('pwa.installed')}</p>
@@ -204,7 +212,7 @@
     font-size: 14px;
   }
 
-  .offline {
+  .secondary {
     min-height: 44px;
     margin-bottom: 8px;
     padding: 0 16px;

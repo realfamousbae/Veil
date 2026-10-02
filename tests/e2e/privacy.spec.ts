@@ -144,3 +144,13 @@ test('the production headers are strict', () => {
   const connect = /connect-src ([^;]+)/.exec(csp)?.[1]?.split(' ') ?? [];
   expect(connect.sort()).toEqual(["'self'", ...new Set(configOrigins(config))].sort());
 });
+
+test('the Privacy page names this deployment’s hosts', async ({ page, baseURL }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Map settings' }).click();
+  await page.getByRole('button', { name: 'Privacy' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Privacy' });
+  await expect(dialog).toContainText('no cookies, no analytics');
+  await expect(dialog).toContainText(`(${new URL(baseURL ?? '').host})`);
+  await expect(dialog).toContainText(`(${new URL(config.geocoder.url).host})`);
+});
