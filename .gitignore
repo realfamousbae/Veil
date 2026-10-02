@@ -1,0 +1,10 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+.DS_Store
+
+# Map data: regions are built by scripts/build-regions.sh, never committed.
+*.pmtiles
+public/dev/
+dist-regions/

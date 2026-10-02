@@ -1,0 +1,6 @@
+{
+  "tiles": { "world": "/dev/moscow-center.pmtiles" },
+  "regions": null,
+  "geocoder": { "type": "photon", "url": "https://photon.komoot.io" },
+  "server": null
+}
