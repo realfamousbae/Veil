@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "budget": "node scripts/check-bundle.mjs",
     "assets": "scripts/fetch-map-assets.sh",
     "regions": "scripts/build-regions.sh"
   },

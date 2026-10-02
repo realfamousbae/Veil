@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm check
+      - name: Lint
+        run: pnpm lint
+      - name: Unit tests
+        run: pnpm test
+
+      # Small map samples for e2e tests (gitignored): world z0–5 + central Moscow,
+      # cut from the latest Protomaps build. Cached for a week.
+      - id: week
+        run: echo "week=$(date +%G-%V)" >> "$GITHUB_OUTPUT"
+      - id: dev-tiles
+        uses: actions/cache@v6
+        with:
+          path: public/dev
+          key: dev-tiles-${{ hashFiles('scripts/regions.tsv', 'scripts/build-regions.sh') }}-${{ steps.week.outputs.week }}
+      - if: steps.dev-tiles.outputs.cache-hit != 'true'
+        uses: ./.github/actions/setup-pmtiles
+      - if: steps.dev-tiles.outputs.cache-hit != 'true'
+        run: |
+          scripts/build-regions.sh --out public/dev --maxzoom 5 world
+          scripts/build-regions.sh --out public/dev moscow-center
+
+      - name: Build and check the bundle budget
+        run: pnpm build && pnpm budget
+
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: E2E tests (incl. the privacy test, PLAN.md §5.8)
+        run: pnpm test:e2e
+        env:
+          CI: true
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

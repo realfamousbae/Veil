@@ -1,0 +1,6 @@
+{
+  "tiles": { "world": "/tiles/world.pmtiles", "worldMaxZoom": 7 },
+  "regions": "/tiles/index.json",
+  "geocoder": { "type": "photon", "url": "https://photon.komoot.io", "langs": ["en", "de", "fr"] },
+  "server": null
+}

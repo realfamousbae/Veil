@@ -1,0 +1,9 @@
+# Cloudflare Pages project for the Veil demo. Deployed by .github/workflows/deploy.yml.
+name = "veil"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-02"
+
+# Map archives, served on the site's own origin by functions/tiles/[[path]].ts.
+[[r2_buckets]]
+binding = "TILES"
+bucket_name = "veil-tiles"

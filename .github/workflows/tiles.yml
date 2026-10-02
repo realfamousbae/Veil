@@ -1,0 +1,59 @@
+name: Map tiles
+
+# Cuts the demo map archives from the latest Protomaps planet build (reading only the
+# needed byte ranges) and uploads them to R2. Nothing is downloaded to a laptop.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 1 * *' # monthly: fresh OpenStreetMap data
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tiles
+  cancel-in-progress: false
+
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      BUCKET: veil-tiles
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      # R2 does not accept the newer AWS CLI default checksums.
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check secrets
+        run: |
+          for s in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+            [ -n "${!s}" ] || { echo "::error::Missing secret for $s (see README → Deploy)"; exit 1; }
+          done
+      - uses: ./.github/actions/setup-pmtiles
+
+      - name: Cut archives
+        run: |
+          scripts/build-regions.sh --out out world
+          scripts/build-regions.sh --out out moscow-oblast
+          ls -la out && cat out/index.json
+
+      - name: Create the bucket if needed
+        run: npx --yes wrangler@4.147.0 r2 bucket create "$BUCKET" || echo "Bucket exists"
+
+      - name: Upload to R2
+        run: |
+          ENDPOINT="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          # Archives first, the catalog last, so it never lists a missing file.
+          for f in out/*.pmtiles; do
+            aws s3 cp "$f" "s3://$BUCKET/$(basename "$f")" --endpoint-url "$ENDPOINT" \
+              --content-type application/octet-stream --only-show-errors
+          done
+          aws s3 cp out/index.json "s3://$BUCKET/index.json" --endpoint-url "$ENDPOINT" \
+            --content-type application/json --only-show-errors
+          aws s3 ls "s3://$BUCKET/" --endpoint-url "$ENDPOINT"
