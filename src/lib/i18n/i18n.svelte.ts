@@ -31,7 +31,11 @@ class I18n {
     await setSetting('locale', choice);
   }
 
-  t = (key: MessageKey): string => dictionaries[this.locale][key];
+  /** Translates a key; `{name}` placeholders are filled from `params`. */
+  t = (key: MessageKey, params?: Record<string, string | number>): string => {
+    const text = dictionaries[this.locale][key];
+    return params ? text.replace(/\{(\w+)\}/g, (m, k: string) => String(params[k] ?? m)) : text;
+  };
 }
 
 export const i18n = new I18n();

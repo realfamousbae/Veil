@@ -1,5 +1,6 @@
 <script lang="ts">
   import { i18n, LOCALES, t, type Locale } from '../lib/i18n/i18n.svelte';
+  import { searchPrefs } from '../lib/search/prefs.svelte';
   import { themeState } from '../lib/theme/theme.svelte';
   import { themes } from '../themes';
   import Icon from './Icon.svelte';
@@ -62,6 +63,29 @@
         {option.name}
       </label>
     {/each}
+  </fieldset>
+
+  <fieldset>
+    <legend>{t('settings.search')}</legend>
+    <label>
+      <input
+        type="checkbox"
+        checked={searchPrefs.onEnter}
+        onchange={(e) => searchPrefs.setOnEnter(e.currentTarget.checked)}
+      />
+      {t('settings.searchOnEnter')}
+    </label>
+    <label class="with-hint">
+      <input
+        type="checkbox"
+        checked={searchPrefs.bias}
+        onchange={(e) => searchPrefs.setBias(e.currentTarget.checked)}
+      />
+      <span>
+        {t('settings.searchBias')}
+        <small>{t('settings.searchBiasHint')}</small>
+      </span>
+    </label>
   </fieldset>
 </dialog>
 
@@ -136,7 +160,18 @@
     background: var(--color-surface-hover);
   }
 
+  .with-hint {
+    padding-block: 6px;
+  }
+
+  small {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: 13px;
+  }
+
   input {
+    flex: none;
     width: 18px;
     height: 18px;
     margin: 0;

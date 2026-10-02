@@ -5,12 +5,19 @@ export interface LngLat {
   lat: number;
 }
 
+export type OsmType = 'node' | 'way' | 'relation';
+
 export interface Place {
   id: string;
+  /** Display name; empty for an unnamed point (the UI shows a generic label). */
   name: string;
   point: LngLat;
   /** Human-readable address or locality, if known. */
   description?: string;
+  /** Source OpenStreetMap object, if any (used for the "Fix in OpenStreetMap" link). */
+  osm?: { type: OsmType; id: number };
+  /** Bounding box [minLng, minLat, maxLng, maxLat] for areas such as cities. */
+  extent?: [number, number, number, number];
 }
 
 export interface TileProvider {

@@ -6,9 +6,18 @@ export interface Settings {
   theme: string;
   /** UI language, or "auto" to follow the browser. */
   locale: 'auto' | 'ru' | 'en';
+  /** Search only on Enter instead of as-you-type (PLAN.md §5.5). */
+  searchOnEnter: boolean;
+  /** Prefer results near the (rounded) map center. */
+  searchBias: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { theme: 'auto', locale: 'auto' };
+export const DEFAULT_SETTINGS: Settings = {
+  theme: 'auto',
+  locale: 'auto',
+  searchOnEnter: false,
+  searchBias: true,
+};
 
 /** Reads a setting; falls back to the default if storage is unavailable (e.g. private mode). */
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {
