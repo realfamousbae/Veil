@@ -1,9 +1,27 @@
 <script lang="ts">
   import type { Map } from 'maplibre-gl';
+  import type { LocateMode } from '../lib/geolocation/locator.svelte';
   import { t } from '../lib/i18n/i18n.svelte';
   import Icon from './Icon.svelte';
 
-  let { map, onsettings }: { map: Map | undefined; onsettings: () => void } = $props();
+  interface Props {
+    map: Map | undefined;
+    locateMode: LocateMode;
+    onlocate: () => void;
+    onsettings: () => void;
+  }
+
+  let { map, locateMode, onlocate, onsettings }: Props = $props();
+
+  const locateLabel = $derived(
+    locateMode === 'follow'
+      ? t('locate.stop')
+      : locateMode === 'shown'
+        ? t('locate.follow')
+        : locateMode === 'locating'
+          ? t('locate.locating')
+          : t('locate.show'),
+  );
 
   const animate = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
 </script>
@@ -35,6 +53,18 @@
       <Icon name="minus" />
     </button>
   </div>
+  <button
+    class="locate"
+    type="button"
+    data-mode={locateMode}
+    title={locateLabel}
+    aria-label={locateLabel}
+    aria-pressed={locateMode === 'follow'}
+    aria-busy={locateMode === 'locating'}
+    onclick={onlocate}
+  >
+    <Icon name={locateMode === 'follow' ? 'locate-follow' : 'locate'} />
+  </button>
 </div>
 
 <style>
@@ -72,6 +102,32 @@
 
   .group button {
     box-shadow: none;
+  }
+
+  .locate[data-mode='shown'] {
+    color: var(--color-accent);
+  }
+
+  .locate[data-mode='follow'] {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .locate[data-mode='locating'] {
+    color: var(--color-text-muted);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .locate[data-mode='locating'] :global(.icon) {
+      animation: pulse 1s ease-in-out infinite alternate;
+    }
+  }
+
+  @keyframes pulse {
+    to {
+      opacity: 0.3;
+    }
   }
 
   .group button:first-child {

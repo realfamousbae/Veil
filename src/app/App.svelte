@@ -3,13 +3,16 @@
   import { Marker, type Map } from 'maplibre-gl';
   import { untrack } from 'svelte';
   import Attribution from '../components/Attribution.svelte';
+  import Icon from '../components/Icon.svelte';
   import MapControls from '../components/MapControls.svelte';
   import SearchBar from '../components/SearchBar.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
   import SettingsDialog from '../components/SettingsDialog.svelte';
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
-  import { i18n, t } from '../lib/i18n/i18n.svelte';
+  import { Locator, type Fix } from '../lib/geolocation/locator.svelte';
+  import { UserLocationMarker } from '../lib/geolocation/marker';
+  import { i18n, t, type MessageKey } from '../lib/i18n/i18n.svelte';
   import { readCameraFromHash, syncCameraHash, type Camera } from '../lib/map/hash';
   import { onLongPress } from '../lib/map/long-press';
   import MapView from '../lib/map/MapView.svelte';
@@ -62,6 +65,50 @@
   });
 
   // A place from a shared link is shown as is: no geocoder request on load (PLAN.md §5.1).
+  // Geolocation, only on the "Where am I" button (PLAN.md §5.4).
+  const locator = new Locator(onfix);
+
+  function onfix(fix: Fix, follow: boolean) {
+    if (!map) return;
+    cameraOnUser = true; // set before moving so the URL never gets this position
+    const duration = reducedMotion() ? 0 : follow ? 500 : 1000;
+    map.easeTo({
+      center: [fix.lng, fix.lat],
+      zoom: follow ? map.getZoom() : Math.max(map.getZoom(), 15),
+      duration,
+    });
+  }
+
+  // Recreated when the map or the label's language changes; the next effect re-applies the fix.
+  let userMarker = $state.raw<UserLocationMarker>();
+  $effect(() => {
+    if (!map) return;
+    const marker = new UserLocationMarker(map, t('locate.you'));
+    userMarker = marker;
+    return () => marker.remove();
+  });
+  $effect(() => userMarker?.update(locator.fix));
+
+  // Panning the map by hand leaves follow mode and the user's position.
+  $effect(() => {
+    if (!map) return;
+    const m = map;
+    const leave = () => {
+      cameraOnUser = false;
+      locator.stopFollow();
+    };
+    m.on('dragstart', leave);
+    return () => m.off('dragstart', leave);
+  });
+
+  let notice = $state<MessageKey | null>(null);
+  $effect(() => {
+    if (!locator.error) return;
+    notice = `locate.${locator.error}`;
+    const timer = setTimeout(() => (notice = null), 6000);
+    return () => clearTimeout(timer);
+  });
+
   const restored = readPlaceFromHash();
   if (restored) search.select(restored);
   const initialCamera: Camera =
@@ -132,6 +179,8 @@
   /** Picks a search result: shows it and moves the map to it. */
   function pick(place: Place) {
     search.select(place);
+    cameraOnUser = false;
+    locator.stopFollow();
     if (!wide) {
       searchInput?.blur(); // hide the on-screen keyboard
       snap = 'half';
@@ -179,8 +228,21 @@
       {:else if style}
         <MapView {style} camera={initialCamera} onready={(m) => (map = m)} />
       {/if}
+      {#if notice}
+        <p class="notice" role="alert">
+          <span>{t(notice)}</span>
+          <button type="button" aria-label={t('common.close')} onclick={() => (notice = null)}>
+            <Icon name="close" />
+          </button>
+        </p>
+      {/if}
       <div class="corner">
-        <MapControls {map} onsettings={() => settings.open()} />
+        <MapControls
+          {map}
+          locateMode={locator.mode}
+          onlocate={() => locator.press()}
+          onsettings={() => settings.open()}
+        />
         <Attribution />
       </div>
     </main>
@@ -238,6 +300,43 @@
     transition: bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
+  .notice {
+    position: absolute;
+    top: calc(72px + env(safe-area-inset-top));
+    left: 12px;
+    right: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    max-width: 480px;
+    padding: 4px 4px 4px 16px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .notice span {
+    flex: 1;
+  }
+
+  .notice button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .corner {
       transition: none;
@@ -269,6 +368,10 @@
       right: 16px;
       bottom: 16px;
       transition: none;
+    }
+
+    .notice {
+      top: 16px;
     }
   }
 </style>

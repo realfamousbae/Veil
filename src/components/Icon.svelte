@@ -1,5 +1,14 @@
 <script lang="ts">
-  export type IconName = 'plus' | 'minus' | 'search' | 'close' | 'layers' | 'check' | 'back';
+  export type IconName =
+    | 'plus'
+    | 'minus'
+    | 'search'
+    | 'close'
+    | 'layers'
+    | 'check'
+    | 'back'
+    | 'locate'
+    | 'locate-follow';
 
   let { name }: { name: IconName } = $props();
   const href = $derived(`${import.meta.env.BASE_URL}assets/icons.svg#${name}`);

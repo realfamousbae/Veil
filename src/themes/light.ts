@@ -17,6 +17,8 @@ const theme: Theme = {
       onAccent: '#ffffff',
       focus: '#0b5fcc',
       scrim: 'rgb(0 0 0 / 0.32)',
+      location: '#1a73e8',
+      locationAccuracy: 'rgb(26 115 232 / 0.16)',
     },
     radius: { sm: '6px', md: '10px', lg: '16px', full: '999px' },
     shadow: {
