@@ -1,5 +1,5 @@
 // Writes dist/_headers (Cloudflare Pages) from dist/config.json, so the CSP allows exactly
-// the external hosts the runtime config points at (PLAN.md §5.7). Runs after every build
+// the external hosts the runtime config points at (PRIVACY.md §7). Runs after every build
 // and again at deploy time, after the production config is swapped in.
 import { readFile, writeFile } from 'node:fs/promises';
 

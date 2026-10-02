@@ -30,7 +30,7 @@ const OSM_TYPES: Record<string, OsmType> = { N: 'node', W: 'way', R: 'relation' 
 
 /**
  * Location bias is the map center rounded to 0.1° (~10 km), so the geocoder never
- * learns where exactly the user is looking (PLAN.md §5.5).
+ * learns where exactly the user is looking (PRIVACY.md §5).
  */
 export function roundBias(point: LngLat): LngLat {
   const r = (v: number) => Math.round(v * 10) / 10;

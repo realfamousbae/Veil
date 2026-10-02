@@ -43,7 +43,7 @@ export function readCameraFromHash(hash = location.hash): Camera | null {
 /**
  * Keeps `#map=` in sync with the camera. While `paused()` is true (the camera shows the
  * user's own position) the fragment is left alone, so it never carries their location
- * (PLAN.md §5.4). Returns a function that stops syncing.
+ * (PRIVACY.md §4). Returns a function that stops syncing.
  */
 export function syncCameraHash(map: Map, paused: () => boolean): () => void {
   const write = () => {

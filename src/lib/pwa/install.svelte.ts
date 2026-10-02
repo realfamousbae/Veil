@@ -3,7 +3,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-/** Installing Veil as a Home Screen app (PLAN.md §7.1). Everything here stays local. */
+/** Installing Veil as a Home Screen app Everything here stays local. */
 class InstallState {
   /** Already running as an installed app. */
   standalone = $state(false);

@@ -1,4 +1,4 @@
-// The privacy contract of PLAN.md §5, checked end to end on the production build.
+// The privacy contract of PRIVACY.md, checked end to end on the production build.
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 

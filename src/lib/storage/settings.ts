@@ -6,7 +6,7 @@ export interface Settings {
   theme: string;
   /** UI language, or "auto" to follow the browser. */
   locale: 'auto' | 'ru' | 'en';
-  /** Search only on Enter instead of as-you-type (PLAN.md §5.5). */
+  /** Search only on Enter instead of as-you-type (PRIVACY.md §5). */
   searchOnEnter: boolean;
   /** Prefer results near the (rounded) map center. */
   searchBias: boolean;

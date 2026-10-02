@@ -22,9 +22,9 @@ Notes:
 - z15 roughly doubles the size versus z14. Protomaps tiles max out at z15; MapLibre
   overzooms beyond that, so z15 is enough for street-level detail.
 
-## MVP demo set
+## Demo set
 
-Decided 2026-10-02: the MVP covers Moscow and Moscow Oblast.
+The public demo covers the whole world at overview zooms and Moscow with Moscow Oblast in detail.
 
 | File                          | Size        |
 | ----------------------------- | ----------- |
@@ -32,11 +32,10 @@ Decided 2026-10-02: the MVP covers Moscow and Moscow Oblast.
 | `moscow-oblast.pmtiles` (z15) | 572 MB      |
 | **Total**                     | **~761 MB** |
 
-Fits comfortably in a free object-storage tier (to be re-checked against current
-Cloudflare R2 pricing before deploy). As an offline download for a phone, 572 MB is large;
+Fits comfortably in Cloudflare R2's free storage tier. As an offline download for a phone, 572 MB is large;
 the "Offline maps" screen may later offer Moscow alone (138 MB) as a lighter option.
 
-## Web bundle (stage 0 baseline)
+## Web bundle (first prototype)
 
 | Chunk           | gzip   |
 | --------------- | ------ |
@@ -45,4 +44,4 @@ the "Offline maps" screen may later offer Moscow alone (138 MB) as a lighter opt
 | CSS             | 11 KB  |
 
 The worker currently duplicates MapLibre's shared chunk; worth revisiting when the bundle
-budget (PLAN.md §9) is added to CI.
+budget is added to CI.

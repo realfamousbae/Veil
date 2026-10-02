@@ -55,7 +55,7 @@
   /**
    * The camera was moved to the user's own position and they haven't moved it since.
    * While true, neither the URL nor the geocoder (as search bias) may learn the map
-   * center, because it is the user's location (PLAN.md §5.4).
+   * center, because it is the user's location (PRIVACY.md §4).
    */
   let cameraOnUser = $state(false);
 
@@ -92,8 +92,8 @@
     onEnterOnly: () => searchPrefs.onEnter,
   });
 
-  // A place from a shared link is shown as is: no geocoder request on load (PLAN.md §5.1).
-  // Geolocation, only on the "Where am I" button (PLAN.md §5.4).
+  // A place from a shared link is shown as is: no geocoder request on load (PRIVACY.md §1).
+  // Geolocation, only on the "Where am I" button (PRIVACY.md §4).
   const locator = new Locator(onfix);
 
   function onfix(fix: Fix, follow: boolean) {
