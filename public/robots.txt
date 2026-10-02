@@ -1,0 +1,3 @@
+# Link previews (Telegram, WhatsApp, VK, …) and search engines are welcome.
+User-agent: *
+Allow: /

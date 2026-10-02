@@ -20,7 +20,7 @@ function productionHeaders(): Record<string, string> {
       .split('\n')
       .slice(1)
       .map((l) => l.trim())
-      .filter(Boolean)
+      .filter((l) => l && !l.startsWith('!')) // "! Name" detaches a host header
       .map((l) => [l.slice(0, l.indexOf(':')), l.slice(l.indexOf(':') + 1).trim()]),
   );
 }
@@ -134,6 +134,9 @@ test('only allow-listed hosts are contacted, nothing is stored outside the devic
 test('the production headers are strict', () => {
   const h = productionHeaders();
   expect(h['Referrer-Policy']).toBe('no-referrer');
+  // Cloudflare's Network Error Logging would make browsers report to a third-party host.
+  expect(headersFile).toMatch(/^\s+! NEL$/m);
+  expect(headersFile).toMatch(/^\s+! Report-To$/m);
   expect(h['X-Content-Type-Options']).toBe('nosniff');
   expect(h['Permissions-Policy']).toContain('geolocation=(self)');
   expect(h['Permissions-Policy']).toContain('camera=()');

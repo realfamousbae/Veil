@@ -16,6 +16,10 @@ export function externalOrigins(config) {
   return [...new Set(urls)].sort();
 }
 
+/**
+ * "! Name" removes a header the host adds on its own: Cloudflare's Network Error Logging
+ * (NEL, Report-To) makes browsers send error reports to a third-party host.
+ */
 export function buildHeaders(config) {
   const connect = ["'self'", ...externalOrigins(config)].join(' ');
   const csp = [
@@ -38,6 +42,8 @@ export function buildHeaders(config) {
   Permissions-Policy: geolocation=(self), camera=(), microphone=(), browsing-topics=(), interest-cohort=()
   X-Content-Type-Options: nosniff
   Cross-Origin-Opener-Policy: same-origin
+  ! Report-To
+  ! NEL
 
 /sw.js
   Cache-Control: no-cache

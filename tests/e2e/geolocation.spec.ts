@@ -87,10 +87,15 @@ test('locate → follow → stop, without the position ever reaching the URL or 
   );
   expect(await calls()).toEqual(['getCurrentPosition', 'watchPosition']);
 
-  // Dragging the map leaves follow mode and stops watching.
+  // Dragging the map leaves follow mode and stops watching. Let the follow animation
+  // settle first: on a slow CI runner a drag in mid-flight may not register as one.
+  const map = page.locator('.maplibregl-map');
+  await expect(map).toHaveAttribute('data-ready', 'true');
+  await page.waitForTimeout(700);
   await page.mouse.move(800, 400);
   await page.mouse.down();
-  await page.mouse.move(600, 300, { steps: 5 });
+  await page.mouse.move(700, 350, { steps: 10 });
+  await page.mouse.move(600, 300, { steps: 10 });
   await page.mouse.up();
   await expect(page.getByRole('button', { name: 'Follow my location' })).toBeVisible();
   expect(await calls()).toEqual(['getCurrentPosition', 'watchPosition', 'clearWatch']);
