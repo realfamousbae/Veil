@@ -6,12 +6,14 @@
   interface Props {
     place: Place;
     resolving: boolean;
+    saved: boolean;
+    ontogglesave: () => void;
     /** Shown when there are results to go back to. */
     onback?: () => void;
     onclose: () => void;
   }
 
-  let { place, resolving, onback, onclose }: Props = $props();
+  let { place, resolving, saved, ontogglesave, onback, onclose }: Props = $props();
 
   const coords = $derived(`${place.point.lat.toFixed(5)}, ${place.point.lng.toFixed(5)}`);
   // Users can't fix missing data here; OpenStreetMap is where it gets fixed (PLAN.md §9).
@@ -40,6 +42,11 @@
   {:else if place.description}
     <p>{place.description}</p>
   {/if}
+
+  <button class="save" type="button" aria-pressed={saved} onclick={ontogglesave}>
+    <Icon name={saved ? 'star-filled' : 'star'} />
+    {saved ? t('places.saved') : t('places.save')}
+  </button>
 
   <dl>
     <dt>{t('place.coordinates')}</dt>
@@ -82,6 +89,32 @@
 
   dl {
     margin: 4px 0 0;
+  }
+
+  .save {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-top: 4px;
+    padding: 0 16px 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .save:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .save[aria-pressed='true'] {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
   }
 
   dt {

@@ -2,15 +2,18 @@
   import { t } from '../lib/i18n/i18n.svelte';
   import type { Place } from '../lib/providers/types';
   import { MIN_QUERY_LENGTH, type SearchState } from '../lib/search/search.svelte';
+  import { savedPlaces } from '../lib/places/saved.svelte';
   import PlaceCard from './PlaceCard.svelte';
+  import SavedList from './SavedList.svelte';
 
   interface Props {
     search: SearchState;
     onEnterOnly: boolean;
     onpick: (place: Place) => void;
+    onnotice: (text: string) => void;
   }
 
-  let { search, onEnterOnly, onpick }: Props = $props();
+  let { search, onEnterOnly, onpick, onnotice }: Props = $props();
 
   const queryLength = $derived(search.query.trim().length);
   const status = $derived.by(() => {
@@ -30,6 +33,8 @@
   <PlaceCard
     place={search.selected}
     resolving={search.resolving}
+    saved={savedPlaces.has(search.selected.id)}
+    ontogglesave={() => search.selected && savedPlaces.toggle(search.selected)}
     onback={search.results.length ? () => search.deselect() : undefined}
     onclose={() => search.deselect()}
   />
@@ -54,13 +59,12 @@
       {/each}
     </ul>
   {:else if !status}
-    <p class="hint">{t('panel.empty')} {t('place.whatsHere')}</p>
+    <SavedList {onpick} {onnotice} />
   {/if}
 {/if}
 
 <style>
-  .status,
-  .hint {
+  .status {
     margin: 0;
     color: var(--color-text-muted);
   }

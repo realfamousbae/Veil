@@ -3,16 +3,22 @@
   import { Marker, type Map } from 'maplibre-gl';
   import { untrack } from 'svelte';
   import Attribution from '../components/Attribution.svelte';
+  import Icon from '../components/Icon.svelte';
   import MapControls from '../components/MapControls.svelte';
   import SearchBar from '../components/SearchBar.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
   import SettingsDialog from '../components/SettingsDialog.svelte';
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
+  import { Locator, type Fix } from '../lib/geolocation/locator.svelte';
+  import { UserLocationMarker } from '../lib/geolocation/marker';
   import { i18n, t } from '../lib/i18n/i18n.svelte';
+  import { readCameraFromHash, syncCameraHash, type Camera } from '../lib/map/hash';
   import { onLongPress } from '../lib/map/long-press';
   import MapView from '../lib/map/MapView.svelte';
   import { buildStyle } from '../lib/map/style';
+  import { SavedPlaceMarkers } from '../lib/places/markers';
+  import { savedPlaces } from '../lib/places/saved.svelte';
   import { PhotonGeocodeProvider } from '../lib/providers/photon';
   import { PmtilesTileProvider } from '../lib/providers/pmtiles';
   import type { GeocodeProvider, Place } from '../lib/providers/types';
@@ -22,7 +28,7 @@
   import { applyTheme } from '../lib/theme/css';
   import { themeState } from '../lib/theme/theme.svelte';
 
-  const MOSCOW: [number, number] = [37.62, 55.75];
+  const MOSCOW: Camera = { center: [37.62, 55.75], zoom: 12, bearing: 0, pitch: 0 };
   const WIDE = 768; // must match the @container breakpoints in components
   const assetsBase = resolveUrl(`${import.meta.env.BASE_URL}assets/`);
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -31,6 +37,12 @@
   let geocoder = $state.raw<GeocodeProvider>();
   let error = $state<string>();
   let map = $state.raw<Map>();
+  /**
+   * The camera was moved to the user's own position and they haven't moved it since.
+   * While true, neither the URL nor the geocoder (as search bias) may learn the map
+   * center, because it is the user's location (PLAN.md §5.4).
+   */
+  let cameraOnUser = $state(false);
 
   let width = $state(0);
   let height = $state(0);
@@ -49,14 +61,88 @@
     lang: () => i18n.locale,
     bias: () => {
       const c = map?.getCenter();
-      return searchPrefs.bias && c ? { lng: c.lng, lat: c.lat } : undefined;
+      return searchPrefs.bias && c && !cameraOnUser ? { lng: c.lng, lat: c.lat } : undefined;
     },
     onEnterOnly: () => searchPrefs.onEnter,
   });
 
   // A place from a shared link is shown as is: no geocoder request on load (PLAN.md §5.1).
+  // Geolocation, only on the "Where am I" button (PLAN.md §5.4).
+  const locator = new Locator(onfix);
+
+  function onfix(fix: Fix, follow: boolean) {
+    if (!map) return;
+    cameraOnUser = true; // set before moving so the URL never gets this position
+    const duration = reducedMotion() ? 0 : follow ? 500 : 1000;
+    map.easeTo({
+      center: [fix.lng, fix.lat],
+      zoom: follow ? map.getZoom() : Math.max(map.getZoom(), 15),
+      padding: cameraPadding(),
+      duration,
+    });
+  }
+
+  // Recreated when the map or the label's language changes; the next effect re-applies the fix.
+  let userMarker = $state.raw<UserLocationMarker>();
+  $effect(() => {
+    if (!map) return;
+    const marker = new UserLocationMarker(map, t('locate.you'));
+    userMarker = marker;
+    return () => marker.remove();
+  });
+  $effect(() => userMarker?.update(locator.fix));
+
+  // Panning the map by hand leaves follow mode and the user's position.
+  $effect(() => {
+    if (!map) return;
+    const m = map;
+    const leave = () => {
+      cameraOnUser = false;
+      locator.stopFollow();
+    };
+    m.on('dragstart', leave);
+    return () => m.off('dragstart', leave);
+  });
+
+  let notice = $state<string | null>(null);
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+  function showNotice(text: string) {
+    notice = text;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => (notice = null), 6000);
+  }
+  $effect(() => {
+    if (locator.error) showNotice(t(`locate.${locator.error}`));
+  });
+
+  // Saved places on the map; tapping one opens its card.
+  let savedMarkers = $state.raw<SavedPlaceMarkers>();
+  $effect(() => {
+    if (!map) return;
+    const markers = new SavedPlaceMarkers(
+      map,
+      `${import.meta.env.BASE_URL}assets/icons.svg#star-filled`,
+      (place) => {
+        search.select(place);
+        if (!wide) snap = 'half';
+      },
+    );
+    savedMarkers = markers;
+    return () => markers.remove();
+  });
+  $effect(() => {
+    savedMarkers?.update(
+      savedPlaces.list,
+      search.selected?.id ?? null,
+      (p) => p.name || t('place.point'),
+    );
+  });
+
   const restored = readPlaceFromHash();
   if (restored) search.select(restored);
+  const initialCamera: Camera =
+    readCameraFromHash() ??
+    (restored ? { ...MOSCOW, center: [restored.point.lng, restored.point.lat], zoom: 16 } : MOSCOW);
 
   $effect(() => applyTheme(themeState.current));
   $effect(() => {
@@ -69,6 +155,7 @@
       themeState.init(),
       i18n.init(),
       searchPrefs.init(),
+      savedPlaces.init(),
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
     source = await new PmtilesTileProvider(resolveUrl(config.tiles.world)).source();
@@ -99,6 +186,11 @@
 
   $effect(() => {
     if (!map) return;
+    return syncCameraHash(map, () => cameraOnUser);
+  });
+
+  $effect(() => {
+    if (!map) return;
     return onLongPress(map, (point) => {
       void search.reverse(point);
       if (!wide && snap === 'collapsed') snap = 'half';
@@ -114,17 +206,24 @@
     });
   });
 
+  /** Keeps a camera target clear of the search bar and the open sheet on phones. */
+  function cameraPadding() {
+    if (wide) return 48;
+    const bottom = snap === 'collapsed' ? sheetHeight : Math.round(height * 0.5);
+    return { top: 80, bottom: bottom + 16, left: 32, right: 32 };
+  }
+
   /** Picks a search result: shows it and moves the map to it. */
   function pick(place: Place) {
     search.select(place);
+    cameraOnUser = false;
+    locator.stopFollow();
     if (!wide) {
       searchInput?.blur(); // hide the on-screen keyboard
       snap = 'half';
     }
     if (!map) return;
-    const padding = wide
-      ? 48
-      : { top: 80, bottom: Math.round(height * 0.5) + 16, left: 32, right: 32 };
+    const padding = cameraPadding();
     const duration = reducedMotion() ? 0 : 800;
     const [w, s, e, n] = place.extent ?? [];
     if (w !== undefined && s !== undefined && e !== undefined && n !== undefined && w !== e) {
@@ -162,15 +261,23 @@
       {#if error}
         <p role="alert">{error}</p>
       {:else if style}
-        <MapView
-          {style}
-          center={restored ? [restored.point.lng, restored.point.lat] : MOSCOW}
-          zoom={restored ? 16 : 12}
-          onready={(m) => (map = m)}
-        />
+        <MapView {style} camera={initialCamera} onready={(m) => (map = m)} />
+      {/if}
+      {#if notice}
+        <p class="notice" role="alert">
+          <span>{notice}</span>
+          <button type="button" aria-label={t('common.close')} onclick={() => (notice = null)}>
+            <Icon name="close" />
+          </button>
+        </p>
       {/if}
       <div class="corner">
-        <MapControls {map} onsettings={() => settings.open()} />
+        <MapControls
+          {map}
+          locateMode={locator.mode}
+          onlocate={() => locator.press()}
+          onsettings={() => settings.open()}
+        />
         <Attribution />
       </div>
     </main>
@@ -180,7 +287,7 @@
     </div>
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
-      <SearchPanel {search} onEnterOnly={searchPrefs.onEnter} onpick={pick} />
+      <SearchPanel {search} onEnterOnly={searchPrefs.onEnter} onpick={pick} onnotice={showNotice} />
     </Sheet>
   </div>
 </div>
@@ -228,6 +335,43 @@
     transition: bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
+  .notice {
+    position: absolute;
+    top: calc(72px + env(safe-area-inset-top));
+    left: 12px;
+    right: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    max-width: 480px;
+    padding: 4px 4px 4px 16px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .notice span {
+    flex: 1;
+  }
+
+  .notice button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .corner {
       transition: none;
@@ -259,6 +403,10 @@
       right: 16px;
       bottom: 16px;
       transition: none;
+    }
+
+    .notice {
+      top: 16px;
     }
   }
 </style>

@@ -1,4 +1,4 @@
-import type { GeocodeProvider, LngLat, Place } from '../providers/types';
+import { pointId, type GeocodeProvider, type LngLat, type Place } from '../providers/types';
 
 export const MIN_QUERY_LENGTH = 3;
 export const DEBOUNCE_MS = 300;
@@ -99,7 +99,7 @@ export class SearchState {
     this.#reverse?.abort();
     const controller = new AbortController();
     this.#reverse = controller;
-    const pin: Place = { id: `${point.lat},${point.lng}`, name: '', point };
+    const pin: Place = { id: pointId(point), name: '', point };
     this.selected = pin;
     if (!provider) return;
     this.resolving = true;

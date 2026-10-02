@@ -2,16 +2,17 @@
   import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
   import { Map } from 'maplibre-gl';
   import { onMount } from 'svelte';
+  import type { Camera } from './hash';
   import { setupMapLibre } from './setup';
 
   interface Props {
     style: StyleSpecification;
-    center: [number, number];
-    zoom: number;
+    /** Initial camera. */
+    camera: Camera;
     onready?: (map: Map) => void;
   }
 
-  let { style, center, zoom, onready }: Props = $props();
+  let { style, camera, onready }: Props = $props();
   let container: HTMLDivElement;
   let map: Map | undefined;
   let applied: StyleSpecification | undefined;
@@ -28,10 +29,7 @@
     map = new Map({
       container,
       style,
-      center,
-      zoom,
-      // Map state lives in the URL fragment, which never reaches the server (PLAN.md §5.6).
-      hash: 'map',
+      ...camera,
       // Attribution and zoom controls are our own themed components.
       attributionControl: false,
     });

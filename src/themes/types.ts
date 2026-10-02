@@ -30,6 +30,9 @@ export interface UiTokens {
     focus: string;
     /** Translucent overlay behind modal dialogs. */
     scrim: string;
+    /** The user's position dot, and its translucent accuracy circle. */
+    location: string;
+    locationAccuracy: string;
   };
   radius: { sm: string; md: string; lg: string; full: string };
   shadow: { sm: string; md: string; lg: string };

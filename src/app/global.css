@@ -33,3 +33,48 @@ body {
   box-shadow: var(--shadow-md);
   transform: rotate(-45deg);
 }
+
+/* The user's position (MapLibre Marker elements). Never clickable: the map stays usable. */
+.user-dot {
+  width: 18px;
+  height: 18px;
+  background: var(--color-location);
+  border: 3px solid var(--color-surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.user-accuracy {
+  background: var(--color-location-accuracy);
+  border: 1px solid var(--color-location);
+  border-radius: var(--radius-full);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* Saved place markers (MapLibre Marker elements). */
+.saved-marker {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.saved-marker svg {
+  width: 16px;
+  height: 16px;
+}
+
+.saved-marker:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

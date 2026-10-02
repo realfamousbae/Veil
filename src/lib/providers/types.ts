@@ -5,6 +5,11 @@ export interface LngLat {
   lat: number;
 }
 
+/** Stable id for a place without an OpenStreetMap object: its coordinates to ~1 m. */
+export function pointId(point: LngLat): string {
+  return `${point.lat.toFixed(5)},${point.lng.toFixed(5)}`;
+}
+
 export type OsmType = 'node' | 'way' | 'relation';
 
 export interface Place {
