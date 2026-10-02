@@ -15,6 +15,10 @@ export default ts.config(
     },
   },
   {
+    files: ['scripts/**', '*.config.*', 'tests/e2e/**', 'functions/**'],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: { parserOptions: { parser: ts.parser } },
     // False positives on Svelte 5 `$bindable()` props, which are written for the parent.
