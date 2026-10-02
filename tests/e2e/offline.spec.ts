@@ -3,6 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 test.use({ viewport: { width: 1000, height: 700 }, locale: 'en-US' });
 
 const REGION = 'Moscow (center, dev sample)';
+const HIDE_UI =
+  '.search-slot, .sheet, .corner, .no-detail, .notice { visibility: hidden !important; }';
 
 /** PNG size of the map canvas: a blank map compresses to a few KB, a drawn one doesn't. */
 async function mapBytes(page: Page, hash: string): Promise<number> {
@@ -14,7 +16,8 @@ async function mapBytes(page: Page, hash: string): Promise<number> {
     .poll(async () => Number(await map.getAttribute('data-idle')))
     .toBeGreaterThan(before);
   await expect(map).toHaveAttribute('data-ready', 'true');
-  return (await page.locator('.maplibregl-canvas').screenshot()).length;
+  // Measure the map alone, without the glass UI floating over it.
+  return (await page.locator('.maplibregl-canvas').screenshot({ mask: [], style: HIDE_UI })).length;
 }
 
 test('a downloaded region works in airplane mode at any zoom', async ({ page, context }) => {

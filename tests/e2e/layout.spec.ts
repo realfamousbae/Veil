@@ -3,11 +3,11 @@ import { expect, test } from '@playwright/test';
 test.describe('desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 }, locale: 'en-US' });
 
-  test('shows a fixed side panel; "/" focuses search, Esc leaves it', async ({ page }) => {
+  test('shows a floating side panel; "/" focuses search, Esc leaves it', async ({ page }) => {
     await page.goto('/#map=14/55.75/37.62');
     const panel = page.locator('.sheet');
     await expect(panel).toBeVisible();
-    expect(await panel.boundingBox()).toMatchObject({ x: 0, width: 360 });
+    expect(await panel.boundingBox()).toMatchObject({ x: 16, width: 380 });
     await expect(page.getByRole('button', { name: 'Expand panel' })).toBeHidden();
 
     const search = page.getByRole('combobox', { name: 'Search' });

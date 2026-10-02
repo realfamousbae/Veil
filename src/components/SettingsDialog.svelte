@@ -20,13 +20,27 @@
       e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
     if (!inside) dialog.close();
   }
+
+  const themeOptions = $derived([
+    { id: 'auto', label: t('settings.themeAuto') },
+    ...themes.map((th) => ({ id: th.id, label: th.name[i18n.locale] })),
+  ]);
+  const localeOptions = $derived([
+    { id: 'auto' as const, label: t('settings.languageAuto') },
+    ...LOCALES.map((l) => ({ id: l.id, label: l.name })),
+  ]);
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="settings-title" {onclick}>
+<dialog
+  class="sheet-dialog glass glass-panel"
+  bind:this={dialog}
+  aria-labelledby="settings-title"
+  {onclick}
+>
   <header>
     <h2 id="settings-title">{t('settings.title')}</h2>
     <button
-      class="close"
+      class="glass icon-btn"
       type="button"
       aria-label={t('common.close')}
       onclick={() => dialog.close()}
@@ -36,220 +50,144 @@
   </header>
 
   <fieldset>
-    <legend>{t('settings.theme')}</legend>
-    {#each [{ id: 'auto', label: t('settings.themeAuto') }, ...themes.map( (th) => ({ id: th.id, label: th.name[i18n.locale] }) )] as option (option.id)}
-      <label>
-        <input
-          type="radio"
-          name="theme"
-          value={option.id}
-          checked={themeState.choice === option.id}
-          onchange={() => themeState.choose(option.id)}
-        />
-        {option.label}
-      </label>
-    {/each}
+    <legend class="section-title">{t('settings.theme')}</legend>
+    <div class="segmented">
+      {#each themeOptions as option (option.id)}
+        <label class="segment">
+          <input
+            type="radio"
+            name="theme"
+            value={option.id}
+            checked={themeState.choice === option.id}
+            onchange={() => themeState.choose(option.id)}
+          />
+          {option.label}
+        </label>
+      {/each}
+    </div>
   </fieldset>
 
   <fieldset>
-    <legend>{t('settings.language')}</legend>
-    {#each [{ id: 'auto', name: t('settings.languageAuto') }, ...LOCALES] as option (option.id)}
-      <label>
-        <input
-          type="radio"
-          name="locale"
-          value={option.id}
-          checked={i18n.choice === option.id}
-          onchange={() => i18n.choose(option.id as 'auto' | Locale)}
-        />
-        {option.name}
-      </label>
-    {/each}
+    <legend class="section-title">{t('settings.language')}</legend>
+    <div class="segmented">
+      {#each localeOptions as option (option.id)}
+        <label class="segment">
+          <input
+            type="radio"
+            name="locale"
+            value={option.id}
+            checked={i18n.choice === option.id}
+            onchange={() => i18n.choose(option.id as 'auto' | Locale)}
+          />
+          {option.label}
+        </label>
+      {/each}
+    </div>
   </fieldset>
 
   <fieldset>
-    <legend>{t('settings.search')}</legend>
-    <label>
-      <input
-        type="checkbox"
-        checked={searchPrefs.onEnter}
-        onchange={(e) => searchPrefs.setOnEnter(e.currentTarget.checked)}
-      />
-      {t('settings.searchOnEnter')}
-    </label>
-    <label class="with-hint">
-      <input
-        type="checkbox"
-        checked={searchPrefs.bias}
-        onchange={(e) => searchPrefs.setBias(e.currentTarget.checked)}
-      />
-      <span>
-        {t('settings.searchBias')}
-        <small>{t('settings.searchBiasHint')}</small>
-      </span>
-    </label>
+    <legend class="section-title">{t('settings.search')}</legend>
+    <div class="list-group">
+      <label class="list-row">
+        <span class="grow">{t('settings.searchOnEnter')}</span>
+        <input
+          class="switch"
+          type="checkbox"
+          role="switch"
+          checked={searchPrefs.onEnter}
+          onchange={(e) => searchPrefs.setOnEnter(e.currentTarget.checked)}
+        />
+      </label>
+      <label class="list-row">
+        <span class="grow">
+          {t('settings.searchBias')}
+          <span class="hint">{t('settings.searchBiasHint')}</span>
+        </span>
+        <input
+          class="switch"
+          type="checkbox"
+          role="switch"
+          checked={searchPrefs.bias}
+          onchange={(e) => searchPrefs.setBias(e.currentTarget.checked)}
+        />
+      </label>
+    </div>
   </fieldset>
 
-  <section class="app" aria-labelledby="settings-app">
-    <h3 id="settings-app">{t('settings.app')}</h3>
-    <button
-      class="secondary"
-      type="button"
-      onclick={() => {
-        dialog.close();
-        onoffline();
-      }}>{t('offline.open')}</button
-    >
-    <button
-      class="secondary"
-      type="button"
-      onclick={() => {
-        dialog.close();
-        onprivacy();
-      }}>{t('privacy.open')}</button
-    >
-    {#if installState.standalone}
-      <p>{t('pwa.installed')}</p>
-    {:else}
-      <p class="muted">{t('pwa.installHint')}</p>
-      {#if installState.canPrompt}
-        <button class="install" type="button" onclick={() => installState.install()}>
-          {t('pwa.install')}
+  <section aria-labelledby="settings-app">
+    <h3 id="settings-app" class="section-title">{t('settings.app')}</h3>
+    <div class="list-group">
+      <button
+        class="list-row"
+        type="button"
+        onclick={() => {
+          dialog.close();
+          onoffline();
+        }}
+      >
+        <span class="grow">{t('offline.open')}</span>
+        <Icon name="chevron" />
+      </button>
+      <button
+        class="list-row"
+        type="button"
+        onclick={() => {
+          dialog.close();
+          onprivacy();
+        }}
+      >
+        <span class="grow">{t('privacy.open')}</span>
+        <Icon name="chevron" />
+      </button>
+      {#if installState.standalone}
+        <p class="list-row">{t('pwa.installed')}</p>
+      {:else if installState.canPrompt}
+        <button class="list-row accent" type="button" onclick={() => installState.install()}>
+          <span class="grow">
+            {t('pwa.install')}
+            <span class="hint">{t('pwa.installHint')}</span>
+          </span>
+          <Icon name="download" />
         </button>
-      {:else if installState.ios}
-        <p>{t('pwa.iosHint')}</p>
       {:else}
-        <p>{t('pwa.otherHint')}</p>
+        <p class="list-row">
+          <span class="grow">
+            {installState.ios ? t('pwa.iosHint') : t('pwa.otherHint')}
+            <span class="hint">{t('pwa.installHint')}</span>
+          </span>
+        </p>
       {/if}
-    {/if}
+    </div>
   </section>
 </dialog>
 
 <style>
-  dialog {
-    width: min(360px, calc(100% - 32px));
-    max-height: calc(100% - 32px);
-    padding: 0 16px 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    color: var(--color-text);
-    box-shadow: var(--shadow-lg);
-  }
-
-  dialog::backdrop {
-    background: var(--color-scrim);
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  h2 {
-    margin: 0;
-    font-size: 18px;
-  }
-
-  .close {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    margin-right: -10px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: none;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  .close:hover {
-    background: var(--color-surface-hover);
-  }
-
-  fieldset {
-    margin: 8px 0 0;
+  fieldset,
+  section {
+    margin: 14px 0 0;
     padding: 0;
     border: 0;
   }
 
   legend {
-    padding: 8px 0 4px;
-    color: var(--color-text-muted);
-    font-size: 14px;
+    padding: 0;
   }
 
-  label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 44px;
-    padding: 0 8px;
-    border-radius: var(--radius-md);
-    cursor: pointer;
+  p.list-row {
+    margin: 0;
   }
 
-  label:hover {
-    background: var(--color-surface-hover);
+  .accent {
+    color: var(--color-accent);
   }
 
-  .app h3 {
-    margin: 16px 0 4px;
-    color: var(--color-text-muted);
-    font-size: 14px;
-    font-weight: normal;
-  }
-
-  .app p {
-    margin: 0 0 8px;
-  }
-
-  .muted {
-    color: var(--color-text-muted);
-    font-size: 14px;
-  }
-
-  .secondary {
-    min-height: 44px;
-    margin-bottom: 8px;
-    padding: 0 16px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-    color: var(--color-text);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .install {
-    min-height: 44px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: var(--color-accent);
-    color: var(--color-on-accent);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .with-hint {
-    padding-block: 6px;
-  }
-
-  small {
-    display: block;
-    color: var(--color-text-muted);
-    font-size: 13px;
-  }
-
-  input {
-    flex: none;
+  .list-row :global(.icon) {
     width: 18px;
     height: 18px;
-    margin: 0;
-    accent-color: var(--color-accent);
+    color: var(--color-text-muted);
+  }
+
+  .accent :global(.icon) {
+    color: var(--color-accent);
   }
 </style>

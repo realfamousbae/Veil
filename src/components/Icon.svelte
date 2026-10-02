@@ -12,7 +12,12 @@
     | 'star'
     | 'star-filled'
     | 'download'
-    | 'upload';
+    | 'upload'
+    | 'copy'
+    | 'share'
+    | 'edit'
+    | 'pin'
+    | 'chevron';
 
   let { name }: { name: IconName } = $props();
   const href = $derived(`${import.meta.env.BASE_URL}assets/icons.svg#${name}`);

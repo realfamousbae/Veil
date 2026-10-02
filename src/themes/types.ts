@@ -30,13 +30,40 @@ export interface UiTokens {
     focus: string;
     /** Translucent overlay behind modal dialogs. */
     scrim: string;
+    /** Knob of toggle switches (light in every theme, as on iOS). */
+    thumb: string;
     /** The user's position dot, and its translucent accuracy circle. */
     location: string;
     locationAccuracy: string;
   };
-  radius: { sm: string; md: string; lg: string; full: string };
+  radius: { sm: string; md: string; lg: string; xl: string; full: string };
+  /**
+   * Liquid Glass material (technique after liquid-glass-svelte by Tozaburo, MIT): a sharp,
+   * bright edge band around a more blurred center, plus a thin specular rim.
+   */
+  glass: {
+    /** Tint of floating controls (search, map buttons): mostly clear. */
+    tint: string;
+    /** Tint of panels with text (sheet, dialogs): denser, for legibility. */
+    panel: string;
+    /** Tint of the edge band — the thickness of the glass. */
+    edge: string;
+    /** Grouped lists and segmented controls inside a glass panel. */
+    group: string;
+    /** Rim highlight + drop shadow of controls / of panels. */
+    shadow: string;
+    panelShadow: string;
+    /** Backdrop blur of the center of controls / of panels, and of the edge band. */
+    blur: string;
+    panelBlur: string;
+    edgeBlur: string;
+    /** Width of the edge band. */
+    edgeWidth: string;
+    /** How much the glass intensifies the colors behind it, e.g. "180%". */
+    saturate: string;
+  };
   shadow: { sm: string; md: string; lg: string };
-  font: { body: string };
+  font: { body: string; mono: string };
 }
 
 export interface Theme {

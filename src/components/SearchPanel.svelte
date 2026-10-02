@@ -3,6 +3,7 @@
   import type { Place } from '../lib/providers/types';
   import { MIN_QUERY_LENGTH, type SearchState } from '../lib/search/search.svelte';
   import { savedPlaces } from '../lib/places/saved.svelte';
+  import Icon from './Icon.svelte';
   import PlaceCard from './PlaceCard.svelte';
   import SavedList from './SavedList.svelte';
 
@@ -39,12 +40,13 @@
     ontogglesave={() => search.selected && savedPlaces.toggle(search.selected)}
     onback={search.results.length ? oncloseplace : undefined}
     onclose={oncloseplace}
+    {onnotice}
   />
 {:else}
   <p class="status" role="status" aria-live="polite">{status}</p>
 
   {#if search.results.length}
-    <ul id="search-results" role="listbox" aria-label={t('search.results')}>
+    <ul class="list-group" id="search-results" role="listbox" aria-label={t('search.results')}>
       {#each search.results as place, i (place.id)}
         <li
           id="result-{i}"
@@ -54,9 +56,13 @@
           onclick={() => onpick(place)}
           onkeydown={(e) => e.key === 'Enter' && onpick(place)}
           tabindex="-1"
+          class="list-row"
         >
-          <span class="name">{place.name}</span>
-          {#if place.description}<span class="description">{place.description}</span>{/if}
+          <span class="badge"><Icon name="pin" /></span>
+          <span class="grow">
+            <span class="name">{place.name}</span>
+            {#if place.description}<span class="hint">{place.description}</span>{/if}
+          </span>
         </li>
       {/each}
     </ul>
@@ -67,34 +73,25 @@
 
 <style>
   .status {
-    margin: 0;
+    margin: 2px 6px 10px;
     color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .status:empty {
     display: none;
   }
 
-  ul {
-    margin: 8px -8px 0;
-    padding: 0;
-    list-style: none;
-  }
-
   li {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-    min-height: 48px;
-    padding: 8px;
-    border-radius: var(--radius-md);
     cursor: pointer;
   }
 
   li:hover,
   li.active {
-    background: var(--color-surface-hover);
+    background: var(--glass-edge);
   }
 
   li.active {
@@ -102,13 +99,25 @@
     outline-offset: -2px;
   }
 
-  .name {
-    font-weight: 600;
-    overflow-wrap: anywhere;
+  .badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
   }
 
-  .description {
-    color: var(--color-text-muted);
-    font-size: 14px;
+  .badge :global(.icon) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .name {
+    display: block;
+    font-weight: 600;
+    overflow-wrap: anywhere;
   }
 </style>

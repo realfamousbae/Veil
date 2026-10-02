@@ -38,37 +38,44 @@
 </script>
 
 <section aria-labelledby="saved-title">
-  <h2 id="saved-title">
+  <h2 id="saved-title" class="section-title">
     {t('places.title')}
     {#if savedPlaces.list.length}<span class="count">{savedPlaces.list.length}</span>{/if}
   </h2>
 
   {#if savedPlaces.list.length}
-    <ul>
+    <ul class="list-group">
       {#each savedPlaces.list as place (place.id)}
         <li>
-          <button class="item" type="button" onclick={() => onpick(place)}>
-            <Icon name="star-filled" />
-            <span class="text">
+          <button class="list-row" type="button" onclick={() => onpick(place)}>
+            <span class="badge"><Icon name="star-filled" /></span>
+            <span class="grow">
               <span class="name">{place.name || t('place.point')}</span>
-              {#if place.description}<span class="description">{place.description}</span>{/if}
+              {#if place.description}<span class="hint">{place.description}</span>{/if}
             </span>
+            <Icon name="chevron" />
           </button>
         </li>
       {/each}
     </ul>
   {:else}
-    <p class="muted">{t('places.empty')}</p>
+    <div class="empty list-group">
+      <span class="badge muted"><Icon name="star" /></span>
+      <p>{t('places.empty')}</p>
+    </div>
   {/if}
 
-  <p class="muted small">{t('places.backupHint')} {t('place.whatsHere')}</p>
-
   <div class="actions">
-    <button class="action" type="button" disabled={!savedPlaces.list.length} onclick={exportPlaces}>
+    <button
+      class="glass pill"
+      type="button"
+      disabled={!savedPlaces.list.length}
+      onclick={exportPlaces}
+    >
       <Icon name="download" />
       {t('places.export')}
     </button>
-    <button class="action" type="button" onclick={() => fileInput.click()}>
+    <button class="glass pill" type="button" onclick={() => fileInput.click()}>
       <Icon name="upload" />
       {t('places.import')}
     </button>
@@ -80,6 +87,8 @@
       onchange={(e) => importPlaces(e.currentTarget.files?.[0])}
     />
   </div>
+
+  <p class="note">{t('places.backupHint')} {t('place.whatsHere')}</p>
 </section>
 
 <style>
@@ -87,101 +96,77 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 8px;
-    font-size: 16px;
+    margin-top: 6px;
   }
 
   .count {
     padding: 0 8px;
     border-radius: var(--radius-full);
-    background: var(--color-surface-raised);
+    background: var(--glass-group);
+    letter-spacing: 0;
+    line-height: 20px;
+  }
+
+  .badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .badge.muted {
+    background: var(--glass-edge);
     color: var(--color-text-muted);
-    font-size: 13px;
-    font-weight: normal;
-    line-height: 22px;
   }
 
-  ul {
-    margin: 0 -8px;
-    padding: 0;
-    list-style: none;
+  .badge :global(.icon) {
+    width: 18px;
+    height: 18px;
   }
 
-  .item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 48px;
-    padding: 8px;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: none;
-    color: var(--color-accent);
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .item:hover {
-    background: var(--color-surface-hover);
-  }
-
-  .text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    color: var(--color-text);
+  .list-row :global(.icon:last-child) {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-muted);
   }
 
   .name {
+    display: block;
     font-weight: 600;
     overflow-wrap: anywhere;
   }
 
-  .description,
-  .muted {
+  .empty {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .empty p {
+    margin: 0;
     color: var(--color-text-muted);
-  }
-
-  .description {
     font-size: 14px;
-  }
-
-  p {
-    margin: 0 0 8px;
-  }
-
-  .small {
-    margin-top: 12px;
-    font-size: 13px;
   }
 
   .actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 14px;
   }
 
-  .action {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 44px;
-    padding: 0 14px 0 10px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-    color: var(--color-text);
-    font: inherit;
-    cursor: pointer;
+  .actions .pill {
+    flex: 1;
   }
 
-  .action:disabled {
+  .note {
+    margin: 14px 6px 0;
     color: var(--color-text-muted);
-    cursor: default;
-  }
-
-  .action:hover:not(:disabled) {
-    background: var(--color-surface-hover);
+    font-size: 12px;
+    line-height: 1.45;
   }
 </style>

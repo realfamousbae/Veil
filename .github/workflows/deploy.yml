@@ -53,4 +53,9 @@ jobs:
         name: Deploy to Cloudflare Pages
         run: |
           npx --yes wrangler@4.147.0 pages project create veil --production-branch main || true
-          npx --yes wrangler@4.147.0 pages deploy --project-name veil --branch main --commit-dirty=true
+          npx --yes wrangler@4.147.0 pages deploy --project-name veil --branch main --commit-dirty=true \
+            --commit-hash "$COMMIT_SHA" --commit-message "$COMMIT_MESSAGE"
+        env:
+          # Shown in the Cloudflare dashboard next to the deployment (Direct Upload has no Git link).
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message || github.event.head_commit.message || 'Manual deploy' }}

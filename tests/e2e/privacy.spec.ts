@@ -91,7 +91,7 @@ test('only allow-listed hosts are contacted, nothing is stored outside the devic
 
   // "What's here?"
   await page.keyboard.press('Escape');
-  await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 300, y: 300 } });
+  await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 800, y: 300 } });
   await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
 
   // Switch theme and language.

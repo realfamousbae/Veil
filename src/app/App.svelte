@@ -370,11 +370,11 @@
         <MapView {style} camera={initialCamera} onready={(m) => (map = m)} />
       {/if}
       {#if notice}
-        <p class="notice" role="alert">
+        <p class="notice glass glass-panel" role="alert">
           <span>{notice.text}</span>
           {#if notice.action}
             <button
-              class="action"
+              class="action pill pill-accent glass"
               type="button"
               onclick={() => {
                 notice?.action?.run();
@@ -382,13 +382,18 @@
               }}>{notice.action.label}</button
             >
           {/if}
-          <button type="button" aria-label={t('common.close')} onclick={() => (notice = null)}>
+          <button
+            class="icon-btn"
+            type="button"
+            aria-label={t('common.close')}
+            onclick={() => (notice = null)}
+          >
             <Icon name="close" />
           </button>
         </p>
       {/if}
       {#if noDetail && !notice}
-        <p class="no-detail" role="status">{t('tiles.noDetail')}</p>
+        <p class="no-detail glass" role="status">{t('tiles.noDetail')}</p>
       {/if}
       <div class="corner">
         <MapControls
@@ -432,7 +437,7 @@
     overflow: hidden;
   }
 
-  /* Narrow (phone): full-screen map, floating search, bottom sheet. */
+  /* The map always fills the screen; search, sheet and controls float over it in glass. */
   .layout {
     position: relative;
     height: 100%;
@@ -448,57 +453,36 @@
     top: calc(12px + env(safe-area-inset-top));
     left: calc(12px + env(safe-area-inset-left));
     right: calc(12px + env(safe-area-inset-right));
-    z-index: 1;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    z-index: 3;
   }
 
   /* Controls sit in the thumb zone and ride above the sheet up to its half position. */
   .corner {
     position: absolute;
     right: calc(12px + env(safe-area-inset-right));
-    bottom: calc(min(var(--sheet-height), 50%) + 12px);
+    bottom: calc(min(var(--sheet-height), 50%) + 20px + env(safe-area-inset-bottom));
     z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
-    transition: bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    gap: 10px;
+    transition: bottom 0.32s cubic-bezier(0.2, 0.9, 0.25, 1);
   }
 
   .notice {
     position: absolute;
-    top: calc(72px + env(safe-area-inset-top));
+    top: calc(74px + env(safe-area-inset-top));
     left: 12px;
     right: 12px;
-    z-index: 3;
+    z-index: 4;
     display: flex;
     align-items: center;
     gap: 8px;
     margin: 0 auto;
     max-width: 480px;
-    padding: 4px 4px 4px 16px;
-    background: var(--color-surface);
+    padding: 6px 6px 6px 18px;
+    border-radius: var(--radius-xl);
     color: var(--color-text);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .no-detail {
-    position: absolute;
-    top: calc(72px + env(safe-area-inset-top));
-    left: 50%;
-    z-index: 1;
-    margin: 0;
-    padding: 6px 12px;
-    transform: translateX(-50%);
-    background: var(--color-surface);
-    color: var(--color-text-muted);
-    border-radius: var(--radius-full);
-    box-shadow: var(--shadow-md);
-    font-size: 14px;
-    white-space: nowrap;
   }
 
   .notice span {
@@ -506,25 +490,22 @@
   }
 
   .notice .action {
-    width: auto;
-    padding: 0 12px;
-    background: var(--color-accent);
-    color: var(--color-on-accent);
-    font: inherit;
+    min-height: 38px;
+    padding: 0 14px;
   }
 
-  .notice button {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: none;
-    color: inherit;
-    cursor: pointer;
+  .no-detail {
+    position: absolute;
+    top: calc(74px + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 1;
+    margin: 0;
+    padding: 7px 14px;
+    transform: translateX(-50%);
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -533,25 +514,12 @@
     }
   }
 
-  /* Wide (desktop): fixed left panel with search on top, map takes the rest. */
   @container shell (min-width: 768px) {
-    .layout {
-      display: grid;
-      grid-template: 'search map' auto 'panel map' 1fr / 360px 1fr;
-    }
-
-    .map-area {
-      position: relative;
-      grid-area: map;
-    }
-
     .search-slot {
-      position: static;
-      grid-area: search;
-      padding: 16px 16px 8px;
-      background: var(--color-surface);
-      border-radius: 0;
-      box-shadow: none;
+      top: 16px;
+      left: 16px;
+      right: auto;
+      width: 380px;
     }
 
     .corner {
@@ -563,6 +531,11 @@
     .notice,
     .no-detail {
       top: 16px;
+      left: calc(50% + 206px);
+      right: auto;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 460px);
     }
   }
 </style>

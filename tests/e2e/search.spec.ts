@@ -109,7 +109,7 @@ test('shows a clear message when the geocoder fails', async ({ page }) => {
 test('right-click reverse geocodes the clicked point', async ({ page }) => {
   const urls = await mockPhoton(page);
   await open(page);
-  await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 300, y: 200 } });
+  await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 800, y: 200 } });
   await expect(page.getByRole('heading', { name: 'Here' })).toBeVisible();
   expect(urls.map((u) => u.pathname)).toEqual(['/reverse']);
   expect(urls[0]?.searchParams.get('lat')).toMatch(/^55\.\d{5}$/);
