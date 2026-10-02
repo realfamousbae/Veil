@@ -32,6 +32,11 @@ async function enforceProductionHeaders(page: Page, origin: string) {
   const headers = productionHeaders();
   expect(headers['Content-Security-Policy']).toContain("default-src 'self'");
   await page.route(`${origin}/**`, async (route) => {
+    // The CSP takes effect through documents and scripts (incl. workers); everything else
+    // (e.g. hundreds of tile range requests) goes straight to the server.
+    if (!['document', 'script'].includes(route.request().resourceType())) {
+      return route.continue();
+    }
     const response = await route.fetch();
     await route.fulfill({ response, headers: { ...response.headers(), ...headers } });
   });

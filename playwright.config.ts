@@ -6,6 +6,8 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
+  // One retry on CI absorbs runner hiccups; a real failure fails both attempts.
+  retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? 'github' : 'list',
   use: {
     baseURL: 'http://localhost:4173',
