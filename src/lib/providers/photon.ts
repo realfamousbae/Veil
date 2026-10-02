@@ -1,4 +1,4 @@
-import type { GeocodeProvider, LngLat, OsmType, Place } from './types';
+import { pointId, type GeocodeProvider, type LngLat, type OsmType, type Place } from './types';
 
 /** Languages of the public photon.komoot.io instance besides "default" (local names). */
 export const PUBLIC_PHOTON_LANGS = ['en', 'de', 'fr'];
@@ -62,7 +62,7 @@ export function toPlace(f: PhotonFeature): Place {
 
   const type = p.osm_type && OSM_TYPES[p.osm_type];
   const place: Place = {
-    id: type && p.osm_id !== undefined ? `${p.osm_type}${p.osm_id}` : `${lat},${lng}`,
+    id: type && p.osm_id !== undefined ? `${p.osm_type}${p.osm_id}` : pointId({ lng, lat }),
     name,
     point: { lng, lat },
   };

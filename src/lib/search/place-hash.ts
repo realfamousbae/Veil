@@ -1,4 +1,4 @@
-import type { Place } from '../providers/types';
+import { pointId, type Place } from '../providers/types';
 import { getHashParam, setHashParam, withHashParam } from '../url-hash';
 
 // The selected place is kept in the URL fragment next to the `map=` parameter:
@@ -37,7 +37,7 @@ export function decodePlace(value: string): Place | null {
   } catch {
     // Malformed name: keep the point.
   }
-  return { id: `${point.lat},${point.lng}`, name: decoded, point };
+  return { id: pointId(point), name: decoded, point };
 }
 
 export function readPlaceFromHash(hash = location.hash): Place | null {
