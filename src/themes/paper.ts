@@ -46,6 +46,17 @@ const map: Flavor = {
   city_label_halo: '#f4ead3',
   roads_label_major: '#5c4630',
   roads_label_minor: '#6e5840',
+  // Points of interest in muted printer's inks instead of bright web colors.
+  pois: {
+    blue: '#3f6382',
+    green: '#4a6a34',
+    lapis: '#3c4f7d',
+    pink: '#8a4659',
+    red: '#94402e',
+    slategray: '#5b5166',
+    tangerine: '#8d5718',
+    turquoise: '#356b66',
+  },
 };
 
 const theme: Theme = {
@@ -63,6 +74,7 @@ const theme: Theme = {
       accent: '#8a3b12',
       onAccent: '#fbf6ea',
       focus: '#8a3b12',
+      scrim: 'rgb(59 42 26 / 0.35)',
     },
     radius: { sm: '2px', md: '3px', lg: '4px', full: '999px' },
     shadow: {
