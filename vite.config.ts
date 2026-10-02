@@ -35,7 +35,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: [
-          '**/*.{js,css,html,svg,png}',
+          '**/*.{js,css,html,svg,png}', // og.jpg (link previews) is not needed offline
           'assets/sprites/**/*.json',
           // UI font: Latin and Cyrillic subsets (others load on demand, if ever needed).
           'assets/jetbrains-mono-{latin,cyrillic}-wght-normal-*.woff2',

@@ -1,45 +1,44 @@
-# Veil — rules for Claude Code
+# Veil — rules for AI coding assistants
 
-Full plan: `PLAN.md`. Talk to the author in Russian; code, comments, commits and file names are in English.
+Guidance for Claude Code and other AI assistants working in this repository. Human
+contributors: see [CONTRIBUTING.md](CONTRIBUTING.md); the same rules apply.
 
-## Workflow
+## Communication
 
-- Before each stage: a short plan; implement only after the author confirms.
-- Each stage is a separate branch and PR, ending in a working state.
-- Commits follow Conventional Commits, in English.
-- Check the current API of external libraries (`maplibre-gl`, `pmtiles`, `@protomaps/basemaps`, `vite-plugin-pwa`) against docs or the published type definitions, not from memory.
-- Dev machine is a MacBook Air M2 / 8 GB: never download planet files locally, never run heavy containers (Photon, Valhalla, planet builds).
+- Reply in the language the user writes in. Code, comments, commit messages and file names
+  are in English.
+- Before a larger change, give a short plan and wait for confirmation.
 
-## Dependencies
+## Privacy comes first
 
-- Add a dependency only when needed; give a one-line "why" for each new one in the PR.
-- Forbidden: dependencies that make network requests on their own (analytics, font loaders, CDN loaders).
+[PRIVACY.md](PRIVACY.md) is a contract: breaking any rule there is a bug. When a feature
+conflicts with it, stop and ask instead of working around it. In particular:
 
-## Privacy (PLAN.md §5) — violations are bugs
-
-Privacy beats implementation convenience. On any conflict: stop and ask.
-
-1. Zero third-party requests on load. Fonts, map glyphs, sprites, icons are served from our own origin only. No CDNs, no Google Fonts, no external scripts.
-2. No analytics or error collectors (Sentry, Plausible, GA, etc.), not even "anonymous" ones.
-3. No cookies. Local storage is IndexedDB / OPFS only, on device only.
-4. Geolocation:
-   - `getCurrentPosition` only from the "Where am I" button click handler;
-   - `watchPosition` only while follow mode is on; stop it when leaving the mode or when the tab is hidden;
-   - on startup, call neither the Geolocation API nor `navigator.permissions.query({name: 'geolocation'})`;
-   - user coordinates are never sent anywhere: not to the geocoder, not into the URL.
-5. Search:
-   - query goes to the geocoder only after ≥3 chars and a 300 ms debounce;
-   - setting "search on Enter only";
-   - location bias uses the map center rounded to 1 decimal (~10 km) and can be disabled;
-   - search history is off by default; if on, stored locally only.
-6. Map state lives in the URL hash (`#map=12/55.75/37.62`).
-7. Security headers in `public/_headers` (CSP, `Referrer-Policy: no-referrer`, `Permissions-Policy`, `nosniff`); `connect-src` is generated from `config.json`.
-8. Playwright privacy test (all requests go to allow-listed hosts, cookies empty) is mandatory in CI.
-9. A short, honest "Privacy" page in the UI.
+- no requests to third-party hosts on load; assets and tiles come from the site's origin;
+- no analytics, error collectors, cookies or web storage; local data goes to IndexedDB/OPFS;
+- geolocation only from the "Where am I" button; the position never leaves the device;
+- external service URLs come from the runtime `public/config.json`, never hard-coded;
+- `tests/e2e/privacy.spec.ts` must keep passing; extend it when adding anything that talks
+  to the network.
 
 ## Code rules
 
-- All external services sit behind provider interfaces; URLs come from runtime `public/config.json`, not from the build.
-- If `config.server === null`, account/sync UI is not rendered at all.
-- No literal colors, radii or shadows in components — theme tokens (CSS custom properties) only. Enforced by stylelint.
-- "© OpenStreetMap" attribution is always visible on the map.
+- Stack: Vite, Svelte 5 (runes), TypeScript strict, MapLibre GL JS, PMTiles.
+- No literal colors, radii or shadows in components — only theme tokens (CSS custom
+  properties from `src/themes/*`); stylelint enforces it. A new theme is one file in
+  `src/themes/`. The glass material and shared UI parts are in `src/app/glass.css` and
+  `src/app/ui.css`.
+- UI strings go through `src/lib/i18n` (`ru` and `en` must have the same keys).
+- Icons live in `public/assets/icons.svg`, styled with presentation attributes only (Safari
+  ignores a sprite's internal styles).
+- Add dependencies only when needed, with a one-line reason in the pull request. Never add
+  dependencies that make network requests on their own (analytics, font or CDN loaders).
+- Check the current API of `maplibre-gl`, `pmtiles`, `@protomaps/basemaps` and
+  `vite-plugin-pwa` against their docs or type definitions, not from memory.
+- Do not download planet-scale map files locally; cut regions with
+  `scripts/build-regions.sh`, which reads only the needed byte ranges.
+
+## Before you finish
+
+`pnpm check && pnpm lint && pnpm test && pnpm test:e2e && pnpm budget` must pass.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/).

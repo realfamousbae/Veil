@@ -1,4 +1,4 @@
-// App state lives in the URL fragment, which never reaches the server (PLAN.md §5.6):
+// App state lives in the URL fragment, which never reaches the server (PRIVACY.md §6):
 //   #map=15/55.75/37.62&place=...
 // Values are written as is (callers keep them free of "&" and "="), not percent-encoded.
 

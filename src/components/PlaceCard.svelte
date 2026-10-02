@@ -18,7 +18,7 @@
 
   const lat = $derived(place.point.lat.toFixed(5));
   const lng = $derived(place.point.lng.toFixed(5));
-  // Users can't fix missing data here; OpenStreetMap is where it gets fixed (PLAN.md §9).
+  // Users can't fix missing data here; OpenStreetMap is where it gets fixed.
   const osmLink = $derived(
     place.osm
       ? `https://www.openstreetmap.org/edit?${place.osm.type}=${place.osm.id}`

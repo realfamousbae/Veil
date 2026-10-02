@@ -1,5 +1,5 @@
 // Components may only use theme tokens (CSS custom properties) for colors,
-// radii and shadows. See PLAN.md §6.
+// radii and shadows. Themes live in src/themes/.
 const varOnly = ['/^var\\(--/'];
 
 export default {

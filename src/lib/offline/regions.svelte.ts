@@ -13,7 +13,7 @@ export function offlineSupported(): boolean {
 }
 
 /**
- * Regions downloaded for offline use: files in OPFS, records in IndexedDB (PLAN.md §7).
+ * Regions downloaded for offline use: files in OPFS, records in IndexedDB.
  * One download runs at a time.
  */
 class OfflineRegions {

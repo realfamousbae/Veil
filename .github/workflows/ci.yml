@@ -52,7 +52,7 @@ jobs:
         run: pnpm build && pnpm budget
 
       - run: pnpm exec playwright install --with-deps chromium
-      - name: E2E tests (incl. the privacy test, PLAN.md §5.8)
+      - name: E2E tests (incl. the privacy test, PRIVACY.md §8)
         run: pnpm test:e2e
         env:
           CI: true

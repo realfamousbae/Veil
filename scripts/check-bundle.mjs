@@ -1,4 +1,4 @@
-// Bundle budget (PLAN.md §9): fails when the app grows past these gzip sizes.
+// Bundle budget: fails when the app grows past these gzip sizes.
 import { readdir, readFile } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 

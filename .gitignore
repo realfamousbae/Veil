@@ -8,3 +8,4 @@ test-results/
 *.pmtiles
 public/dev/
 dist-regions/
+public/og.png

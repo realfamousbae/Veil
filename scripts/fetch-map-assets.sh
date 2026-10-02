@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Downloads map glyphs and sprites from protomaps/basemaps-assets into
 # public/assets/ so the map never requests them from a third-party origin
-# (PLAN.md §5.1). Run once and commit the result; re-run only to upgrade.
+# (PRIVACY.md §1). Run once and commit the result; re-run only to upgrade.
 set -euo pipefail
 
 # Pinned commit of https://github.com/protomaps/basemaps-assets

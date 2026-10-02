@@ -13,7 +13,7 @@ const OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 15_000, ma
 const ERRORS: Record<number, LocateError> = { 1: 'denied', 2: 'unavailable', 3: 'timeout' };
 
 /**
- * The user's position, strictly on demand (PLAN.md §5.4):
+ * The user's position, strictly on demand (PRIVACY.md §4):
  * - nothing touches the Geolocation API until `press()` — call it only from a click handler;
  * - `watchPosition` runs only in follow mode and stops when it ends or the tab is hidden;
  * - the position is kept in memory only.

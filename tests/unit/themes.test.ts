@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio, parseColor, toHex } from '../../src/lib/color';
 import { defaultTheme, themes } from '../../src/themes';
 
-// Text on backgrounds needs 4.5:1 (WCAG AA), non-text UI such as focus rings 3:1 (PLAN.md §8).
+// Text on backgrounds needs 4.5:1 (WCAG AA), non-text UI such as focus rings 3:1.
 const TEXT_PAIRS = [
   ['text', 'surface'],
   ['text', 'surfaceRaised'],

@@ -2,7 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { OfflineRegion } from '../offline/types';
 import type { SavedPlace } from '../places/types';
 
-/** On-device storage (PLAN.md §5.3). Nothing here ever leaves the device. */
+/** On-device storage (PRIVACY.md §3). Nothing here ever leaves the device. */
 interface VeilDB extends DBSchema {
   settings: { key: string; value: unknown };
   places: { key: string; value: SavedPlace };

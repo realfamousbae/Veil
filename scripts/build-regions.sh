@@ -6,7 +6,7 @@
 #   scripts/build-regions.sh [--dry-run] [--build YYYYMMDD] [--out DIR] [--maxzoom N] ID...
 #
 # Region definitions live in scripts/regions.tsv. Writes DIR/<id>.pmtiles and
-# DIR/index.json (catalog for the "Offline maps" screen, PLAN.md §7). The whole-planet
+# DIR/index.json (catalog for the "Offline maps" screen). The whole-planet
 # overview (bbox "-") is written but not listed: it is the base layer, not a region.
 # Requires: pmtiles CLI (brew install pmtiles), node.
 set -euo pipefail
