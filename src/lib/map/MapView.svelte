@@ -17,10 +17,17 @@
   let map: Map | undefined;
   let applied: StyleSpecification | undefined;
 
-  /** Flags when the current style is fully rendered (used by e2e tests). */
-  function markReady(m: Map) {
+  // Render state for e2e tests: data-ready is "true" once the current style is fully drawn;
+  // data-idle counts 'idle' events, so a test can wait for the frame after its own change.
+  let idleCount = 0;
+  function onidle() {
+    container.dataset['ready'] = 'true';
+    container.dataset['idle'] = String(++idleCount);
+  }
+  function markLoading(m: Map) {
     container.dataset['ready'] = 'false';
-    m.once('idle', () => (container.dataset['ready'] = 'true'));
+    // A style swap that needs no new tiles renders nothing, so 'idle' would never come.
+    m.triggerRepaint();
   }
 
   onMount(() => {
@@ -33,7 +40,8 @@
       // Attribution and zoom controls are our own themed components.
       attributionControl: false,
     });
-    markReady(map);
+    map.on('idle', onidle);
+    markLoading(map);
     onready?.(map);
     return () => {
       map?.remove();
@@ -47,7 +55,7 @@
     if (!map || next === applied) return;
     applied = next;
     map.setStyle(next, { diff: true });
-    markReady(map);
+    markLoading(map);
   });
 </script>
 

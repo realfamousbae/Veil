@@ -6,6 +6,7 @@
   import MapControls from '../components/MapControls.svelte';
   import SearchBar from '../components/SearchBar.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
+  import OfflineDialog from '../components/OfflineDialog.svelte';
   import SettingsDialog from '../components/SettingsDialog.svelte';
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
@@ -17,6 +18,7 @@
   import MapView from '../lib/map/MapView.svelte';
   import { buildStyle } from '../lib/map/style';
   import { SavedPlaceMarkers } from '../lib/places/markers';
+  import { offlineRegions } from '../lib/offline/regions.svelte';
   import { savedPlaces } from '../lib/places/saved.svelte';
   import { installState } from '../lib/pwa/install.svelte';
   import { registerServiceWorker } from '../lib/pwa/register';
@@ -26,7 +28,13 @@
   import { searchPrefs } from '../lib/search/prefs.svelte';
   import { SearchState } from '../lib/search/search.svelte';
   import { loadCatalog, type RegionInfo } from '../lib/tiles/catalog';
-  import { registerTileProtocol, remoteArchive, tileResolver } from '../lib/tiles/resolver';
+  import {
+    localArchive,
+    registerTileProtocol,
+    remoteArchive,
+    tileResolver,
+    type Archive,
+  } from '../lib/tiles/resolver';
   import { applyTheme } from '../lib/theme/css';
   import { themeState } from '../lib/theme/theme.svelte';
 
@@ -56,6 +64,7 @@
   let sheetHeight = $state(0);
   let searchInput = $state<HTMLInputElement>();
   let settings: SettingsDialog;
+  let offlineDialog: OfflineDialog;
 
   const wide = $derived(width >= WIDE);
   const style = $derived(
@@ -200,6 +209,7 @@
       i18n.init(),
       searchPrefs.init(),
       savedPlaces.init(),
+      offlineRegions.init(),
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
 
@@ -214,12 +224,26 @@
         // Offline or no catalog: the world overview (and downloaded regions) still work.
       }
     }
-    updateArchives();
+    offlineRegions.onchange = () => void updateArchives();
+    await updateArchives();
   }
 
-  /** Re-reads the set of tile archives and makes the map refetch its tiles. */
-  function updateArchives() {
-    tileResolver.setRegions(catalog.map((r) => remoteArchive(r.id, r.url, r.bbox, r.maxzoom)));
+  /**
+   * Re-reads the set of tile archives (downloaded regions, regions on the server) and makes
+   * the map refetch its tiles.
+   */
+  async function updateArchives() {
+    const local: Archive[] = [];
+    for (const region of offlineRegions.complete) {
+      try {
+        const file = await offlineRegions.file(region.id);
+        local.push(localArchive(region.id, file, region.info.bbox, region.info.maxzoom));
+      } catch {
+        // The file is gone (e.g. storage was cleared): fall back to the network.
+      }
+    }
+    const remote = catalog.map((r) => remoteArchive(r.id, r.url, r.bbox, r.maxzoom));
+    tileResolver.setRegions([...local, ...remote]);
     tilesVersion++;
   }
 
@@ -231,6 +255,7 @@
       const c = m.getCenter();
       noDetail = !tileResolver.hasDetail(c.lng, c.lat, m.getZoom());
     };
+    void tilesVersion; // re-check when the set of archives changes (e.g. catalog loaded)
     m.on('moveend', check);
     check();
     return () => m.off('moveend', check);
@@ -388,7 +413,8 @@
   </div>
 </div>
 
-<SettingsDialog bind:this={settings} />
+<SettingsDialog bind:this={settings} onoffline={() => offlineDialog.open()} />
+<OfflineDialog bind:this={offlineDialog} {catalog} />
 
 <style>
   .shell {
