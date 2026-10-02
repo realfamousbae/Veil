@@ -1,0 +1,17 @@
+{
+  "app.map": "Map",
+  "search.label": "Search",
+  "search.placeholder": "Search places and addresses",
+  "panel.empty": "Find a place or an address, and it will show up here.",
+  "sheet.expand": "Expand panel",
+  "sheet.collapse": "Collapse panel",
+  "map.zoomIn": "Zoom in",
+  "map.zoomOut": "Zoom out",
+  "settings.open": "Map settings",
+  "settings.title": "Settings",
+  "settings.theme": "Theme",
+  "settings.themeAuto": "Match system",
+  "settings.language": "Language",
+  "settings.languageAuto": "Match browser",
+  "common.close": "Close"
+}

@@ -14,5 +14,7 @@ export default ts.config(
   {
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: { parserOptions: { parser: ts.parser } },
+    // False positives on Svelte 5 `$bindable()` props, which are written for the parent.
+    rules: { 'no-useless-assignment': 'off' },
   },
 );

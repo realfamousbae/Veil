@@ -2,15 +2,14 @@ import type {
   StyleSpecification,
   VectorSourceSpecification,
 } from '@maplibre/maplibre-gl-style-spec';
-import { layers, type Flavor } from '@protomaps/basemaps';
+import { layers } from '@protomaps/basemaps';
+import type { Theme } from '../../themes/types';
 
 export const BASEMAP_SOURCE = 'protomaps';
 
 export interface StyleOptions {
   source: VectorSourceSpecification;
-  flavor: Flavor;
-  /** Sprite sheet name under assets/sprites/v4/, e.g. "light". */
-  sprite: string;
+  theme: Theme;
   lang: string;
   /** Absolute URL of the self-hosted assets directory, ending with "/". */
   assetsBase: string;
@@ -21,8 +20,8 @@ export function buildStyle(opts: StyleOptions): StyleSpecification {
   return {
     version: 8,
     glyphs: `${opts.assetsBase}fonts/{fontstack}/{range}.pbf`,
-    sprite: `${opts.assetsBase}sprites/v4/${opts.sprite}`,
+    sprite: `${opts.assetsBase}sprites/v4/${opts.theme.sprite}`,
     sources: { [BASEMAP_SOURCE]: opts.source },
-    layers: layers(BASEMAP_SOURCE, opts.flavor, { lang: opts.lang }),
+    layers: layers(BASEMAP_SOURCE, opts.theme.map, { lang: opts.lang }),
   };
 }

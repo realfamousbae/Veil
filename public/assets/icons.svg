@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- One sprite for all UI icons; 24×24, stroke uses currentColor so themes control the color. -->
+  <defs>
+    <style>
+      symbol { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+</svg>
