@@ -144,9 +144,7 @@
   }
 
   installState.init();
-  registerServiceWorker((apply) =>
-    showNotice(t('pwa.updateReady'), { label: t('pwa.update'), run: apply }),
-  );
+  registerServiceWorker();
 
   // Android's system Back closes an open place card instead of leaving the app: opening
   // a card adds one history entry, and going back removes the card.

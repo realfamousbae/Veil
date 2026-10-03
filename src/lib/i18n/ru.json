@@ -52,8 +52,6 @@
   "places.imported": "Импортировано: {added}. Уже были: {skipped}. Не распознано: {invalid}.",
   "places.importFailed": "Файл не похож на GeoJSON с точками.",
   "places.importTooLarge": "Файл слишком большой (не больше 5 МБ).",
-  "pwa.updateReady": "Готова новая версия Veil.",
-  "pwa.update": "Обновить",
   "settings.app": "Приложение",
   "pwa.installed": "Veil установлен как приложение.",
   "pwa.install": "Установить Veil",

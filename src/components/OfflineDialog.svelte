@@ -59,97 +59,99 @@
     </button>
   </header>
 
-  {#if !offlineSupported()}
-    <p class="intro">{t('offline.unsupported')}</p>
-  {:else}
-    <p class="intro">{t('offline.intro')}</p>
-    {#if installState.ios && !installState.standalone}
-      <p class="warning list-group" role="note">
-        {t('offline.iosInstallFirst')}
-        {t('pwa.iosHint')}
-      </p>
-    {/if}
-
-    {#if catalog.length}
-      <ul class="list-group">
-        {#each catalog as info (info.id)}
-          {@const region = offlineRegions.find(info.id)}
-          {@const active = offlineRegions.active === info.id}
-          {@const error = offlineRegions.error?.id === info.id ? offlineRegions.error : null}
-          <li class="region">
-            <div class="row">
-              <div class="text">
-                <span class="name">{info.name[i18n.locale]}</span>
-                <span class="meta">
-                  {fmt(info.size)} · {t('offline.build', {
-                    date: formatBuildDate(info.build, i18n.locale),
-                  })}
-                </span>
-              </div>
-              {#if region?.complete && !active}
-                <span class="done">
-                  <Icon name="check" />
-                  {t('offline.downloaded')}
-                </span>
-              {/if}
-            </div>
-
-            {#if region && !region.complete}
-              <div class="progress" aria-hidden="true">
-                <span style:width="{(region.bytes / info.size) * 100}%"></span>
-              </div>
-              <progress
-                class="visually-hidden"
-                max={info.size}
-                value={region.bytes}
-                aria-label={info.name[i18n.locale]}
-              ></progress>
-              <span class="meta">
-                {fmt(region.bytes)} / {fmt(info.size)}
-                {#if !active}· {t('offline.paused')}{/if}
-              </span>
-            {/if}
-
-            <div class="buttons">
-              {#if active}
-                <button class="glass pill" type="button" onclick={() => offlineRegions.pause()}>
-                  {t('offline.pause')}
-                </button>
-              {:else if !region?.complete}
-                <button
-                  class="glass pill pill-accent"
-                  type="button"
-                  disabled={!!offlineRegions.active}
-                  onclick={() => offlineRegions.start(info)}
-                >
-                  <Icon name="download" />
-                  {region ? t('offline.resume') : t('offline.download')}
-                </button>
-              {/if}
-              {#if region && !active}
-                <button
-                  class="glass pill"
-                  type="button"
-                  onclick={() => offlineRegions.remove(info.id)}
-                >
-                  {t('offline.delete')}
-                </button>
-              {/if}
-            </div>
-            {#if error}
-              <p class="error" role="alert">{errorText(error.reason, info)}</p>
-            {/if}
-          </li>
-        {/each}
-      </ul>
+  <div class="dialog-body">
+    {#if !offlineSupported()}
+      <p class="intro">{t('offline.unsupported')}</p>
     {:else}
-      <p class="intro">{t('offline.none')}</p>
-    {/if}
+      <p class="intro">{t('offline.intro')}</p>
+      {#if installState.ios && !installState.standalone}
+        <p class="warning list-group" role="note">
+          {t('offline.iosInstallFirst')}
+          {t('pwa.iosHint')}
+        </p>
+      {/if}
 
-    {#if usage !== null}
-      <p class="usage">{t('offline.used', { size: fmt(usage) })}</p>
+      {#if catalog.length}
+        <ul class="list-group">
+          {#each catalog as info (info.id)}
+            {@const region = offlineRegions.find(info.id)}
+            {@const active = offlineRegions.active === info.id}
+            {@const error = offlineRegions.error?.id === info.id ? offlineRegions.error : null}
+            <li class="region">
+              <div class="row">
+                <div class="text">
+                  <span class="name">{info.name[i18n.locale]}</span>
+                  <span class="meta">
+                    {fmt(info.size)} · {t('offline.build', {
+                      date: formatBuildDate(info.build, i18n.locale),
+                    })}
+                  </span>
+                </div>
+                {#if region?.complete && !active}
+                  <span class="done">
+                    <Icon name="check" />
+                    {t('offline.downloaded')}
+                  </span>
+                {/if}
+              </div>
+
+              {#if region && !region.complete}
+                <div class="progress" aria-hidden="true">
+                  <span style:width="{(region.bytes / info.size) * 100}%"></span>
+                </div>
+                <progress
+                  class="visually-hidden"
+                  max={info.size}
+                  value={region.bytes}
+                  aria-label={info.name[i18n.locale]}
+                ></progress>
+                <span class="meta">
+                  {fmt(region.bytes)} / {fmt(info.size)}
+                  {#if !active}· {t('offline.paused')}{/if}
+                </span>
+              {/if}
+
+              <div class="buttons">
+                {#if active}
+                  <button class="glass pill" type="button" onclick={() => offlineRegions.pause()}>
+                    {t('offline.pause')}
+                  </button>
+                {:else if !region?.complete}
+                  <button
+                    class="glass pill pill-accent"
+                    type="button"
+                    disabled={!!offlineRegions.active}
+                    onclick={() => offlineRegions.start(info)}
+                  >
+                    <Icon name="download" />
+                    {region ? t('offline.resume') : t('offline.download')}
+                  </button>
+                {/if}
+                {#if region && !active}
+                  <button
+                    class="glass pill"
+                    type="button"
+                    onclick={() => offlineRegions.remove(info.id)}
+                  >
+                    {t('offline.delete')}
+                  </button>
+                {/if}
+              </div>
+              {#if error}
+                <p class="error" role="alert">{errorText(error.reason, info)}</p>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p class="intro">{t('offline.none')}</p>
+      {/if}
+
+      {#if usage !== null}
+        <p class="usage">{t('offline.used', { size: fmt(usage) })}</p>
+      {/if}
     {/if}
-  {/if}
+  </div>
 </dialog>
 
 <style>

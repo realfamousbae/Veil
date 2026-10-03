@@ -68,7 +68,7 @@ Saved places move over with export/import.
 
 ## How it works
 
-|              |                                                                                                            |
+| Part         | Technology                                                                                                 |
 | ------------ | ---------------------------------------------------------------------------------------------------------- |
 | UI           | [Svelte 5](https://svelte.dev/), TypeScript, Vite                                                          |
 | Map          | [MapLibre GL JS](https://maplibre.org/), [Protomaps basemaps](https://github.com/protomaps/basemaps) style |

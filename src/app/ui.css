@@ -216,15 +216,24 @@ a.list-row:hover {
   transform: translateX(20px);
 }
 
-/* Glass dialogs: dialog.glass.glass-panel.sheet-dialog */
+/*
+ * Glass dialogs: dialog.glass.glass-panel.sheet-dialog > header + .dialog-body.
+ * The dialog itself never scrolls — only .dialog-body does — so the glass layers, which
+ * are absolutely positioned inside the dialog, always cover all of it.
+ */
 .sheet-dialog {
   width: min(400px, calc(100% - 24px));
   max-height: calc(100% - 24px);
-  padding: 0 16px 18px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-xl);
   color: var(--color-text);
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.sheet-dialog[open] {
+  display: flex;
+  flex-direction: column;
 }
 
 .sheet-dialog::backdrop {
@@ -232,19 +241,25 @@ a.list-row:hover {
 }
 
 .sheet-dialog > header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0 6px;
+  padding: 14px 16px 6px;
 }
 
 .sheet-dialog > header h2 {
   margin: 0 0 0 4px;
   font-size: 22px;
   letter-spacing: -0.02em;
+}
+
+.dialog-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 16px 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @media (prefers-reduced-motion: reduce) {

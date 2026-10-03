@@ -1,12 +1,12 @@
 import { registerSW } from 'virtual:pwa-register';
 
 /**
- * Registers the service worker (production builds only). `onupdate` is called when a new
- * version is ready; calling the returned function activates it and reloads.
+ * Registers the service worker (production builds only). A new version activates right
+ * away and reloads the page: a stale worker would otherwise keep serving old files (e.g.
+ * icons) until the user acted on a prompt. Nothing is lost on reload — the map position
+ * and the selected place live in the URL, saved places in IndexedDB.
  */
-export function registerServiceWorker(onupdate: (apply: () => void) => void): void {
+export function registerServiceWorker(): void {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
-  const update = registerSW({
-    onNeedRefresh: () => onupdate(() => void update(true)),
-  });
+  registerSW({ immediate: true });
 }
