@@ -9,10 +9,12 @@
     onpick: (place: Place) => void;
     /** Enter with no highlighted result: search for the query now. */
     onsubmit: () => void;
+    /** The user typed a new query. */
+    onquery: (query: string) => void;
     input?: HTMLInputElement;
   }
 
-  let { search, onpick, onsubmit, input = $bindable() }: Props = $props();
+  let { search, onpick, onsubmit, onquery, input = $bindable() }: Props = $props();
 
   const expanded = $derived(search.results.length > 0 && !search.selected);
 
@@ -50,7 +52,7 @@
     spellcheck="false"
     enterkeyhint="search"
     value={search.query}
-    oninput={(e) => search.setQuery(e.currentTarget.value)}
+    oninput={(e) => onquery(e.currentTarget.value)}
     {onkeydown}
   />
   {#if search.query}

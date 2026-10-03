@@ -149,6 +149,20 @@ test('Enter over an open place card shows results for the new query', async ({ p
   await expect(page.getByRole('heading', { name: 'Kremlin' })).toHaveCount(0);
 });
 
+test('typing a new query over an open place card shows its results', async ({ page }) => {
+  await mockPhoton(page, (url, route) =>
+    route.fulfill({ json: { features: [feature(url.searchParams.get('q') ?? '', 2)] } }),
+  );
+  await open(page, '#map=16/55.7536/37.6215&place=55.75360,37.62150,UmVkIFNxdWFyZQ');
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
+
+  await searchbox(page).pressSequentially('Kr');
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toHaveCount(0);
+  await expect(page.getByText('Type at least 3 characters.')).toBeVisible();
+  await searchbox(page).pressSequentially('emlin');
+  await expect(page.getByRole('option', { name: /Kremlin/ })).toBeVisible();
+});
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

@@ -338,9 +338,15 @@
   }
 
   /**
-   * Enter in the search bar: searches for the query now. An open place card is closed
-   * first, otherwise the new results would stay hidden behind it.
+   * Typing a new query: the user is looking for something else, so an open place card
+   * gives way to the search status and results, which would otherwise stay hidden behind it.
    */
+  function typeQuery(query: string) {
+    if (search.selected) closeCard();
+    search.setQuery(query);
+  }
+
+  /** Enter in the search bar: searches for the query now, closing an open place card. */
   function submitSearch() {
     if (search.query.trim().length < MIN_QUERY_LENGTH) return;
     if (search.selected) closeCard();
@@ -419,7 +425,13 @@
     </main>
 
     <div class="search-slot">
-      <SearchBar {search} onpick={pick} onsubmit={submitSearch} bind:input={searchInput} />
+      <SearchBar
+        {search}
+        onpick={pick}
+        onsubmit={submitSearch}
+        onquery={typeQuery}
+        bind:input={searchInput}
+      />
     </div>
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
