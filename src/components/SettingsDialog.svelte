@@ -4,6 +4,7 @@
   import { searchPrefs } from '../lib/search/prefs.svelte';
   import { themeState } from '../lib/theme/theme.svelte';
   import { themes } from '../themes';
+  import { APP_VERSION, IS_BETA } from '../lib/version';
   import Icon from './Icon.svelte';
 
   let { onoffline, onprivacy }: { onoffline: () => void; onprivacy: () => void } = $props();
@@ -29,6 +30,11 @@
     { id: 'auto' as const, label: t('settings.languageAuto') },
     ...LOCALES.map((l) => ({ id: l.id, label: l.name })),
   ]);
+  const versionLabel = $derived(
+    [`Veil`, t('settings.version', { version: APP_VERSION }), IS_BETA && t('settings.beta')]
+      .filter(Boolean)
+      .join(' · '),
+  );
 </script>
 
 <dialog
@@ -159,6 +165,7 @@
           </p>
         {/if}
       </div>
+      <p class="version">{versionLabel}</p>
     </section>
   </div>
 </dialog>
@@ -181,6 +188,13 @@
 
   .accent {
     color: var(--color-accent);
+  }
+
+  .version {
+    margin: 12px 6px 0;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    text-align: center;
   }
 
   .list-row :global(.icon) {
