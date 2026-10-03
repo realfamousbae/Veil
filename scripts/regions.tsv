@@ -1,6 +1,21 @@
 # id	name_en	name_ru	bbox (min_lon,min_lat,max_lon,max_lat; "-" = whole planet)	maxzoom
 world	World (overview)	Мир (обзор)	-	7
-moscow-oblast	Moscow and Moscow Oblast	Москва и Московская область	35.14,54.25,40.21,56.96	15
+moscow-oblast	Moscow and Moscow Oblast	Москва и Московская область	34.80,54.15,40.30,57.05	15
 moscow	Moscow	Москва	36.80,55.14,37.97,56.02	15
 saint-petersburg	Saint Petersburg	Санкт-Петербург	29.42,59.63,30.76,60.25	15
+vladimir-oblast	Vladimir and Vladimir Oblast	Владимир и Владимирская область	38.05,54.90,42.70,56.90	14
+novosibirsk	Novosibirsk	Новосибирск	82.70,54.80,83.25,55.20	15
+yekaterinburg	Yekaterinburg	Екатеринбург	60.35,56.65,60.90,57.00	15
+kazan	Kazan	Казань	48.85,55.65,49.40,55.95	15
+nizhny-novgorod	Nizhny Novgorod	Нижний Новгород	43.60,56.15,44.20,56.45	15
+chelyabinsk	Chelyabinsk	Челябинск	61.15,55.00,61.65,55.30	15
+krasnoyarsk	Krasnoyarsk	Красноярск	92.55,55.90,93.25,56.20	15
+samara	Samara	Самара	49.90,53.05,50.40,53.40	15
+ufa	Ufa	Уфа	55.80,54.55,56.30,54.90	15
+rostov-on-don	Rostov-on-Don	Ростов-на-Дону	39.45,47.10,39.95,47.38	15
+omsk	Omsk	Омск	73.05,54.80,73.65,55.15	15
+krasnodar	Krasnodar	Краснодар	38.80,44.90,39.25,45.20	15
+voronezh	Voronezh	Воронеж	38.95,51.50,39.45,51.85	15
+perm	Perm	Пермь	55.85,57.85,56.60,58.20	15
+volgograd	Volgograd	Волгоград	44.25,48.35,44.75,49.00	15
 moscow-center	Moscow (center, dev sample)	Москва (центр, для разработки)	37.55,55.72,37.70,55.78	15

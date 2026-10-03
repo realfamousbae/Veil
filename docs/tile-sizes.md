@@ -24,16 +24,24 @@ Notes:
 
 ## Demo set
 
-The public demo covers the whole world at overview zooms and Moscow with Moscow Oblast in detail.
+The public demo covers the whole world at overview zooms, the whole of Moscow Oblast and
+Vladimir Oblast in detail, and the millionaire cities of Russia at street level.
+Measured 2026-10-03 (build `20261002`).
 
-| File                          | Size        |
-| ----------------------------- | ----------- |
-| `world.pmtiles` (z0–7)        | 189 MB      |
-| `moscow-oblast.pmtiles` (z15) | 572 MB      |
-| **Total**                     | **~761 MB** |
+| File                              | Zoom | Size        |
+| --------------------------------- | ---- | ----------- |
+| `world.pmtiles`                   | 0–7  | 189 MB      |
+| `moscow-oblast.pmtiles`           | 0–15 | 618 MB      |
+| `vladimir-oblast.pmtiles`         | 0–14 | 153 MB      |
+| `saint-petersburg.pmtiles`        | 0–15 | 84 MB       |
+| 14 other cities (≈7–20 MB each)\* | 0–15 | ≈250 MB     |
+| **Total**                         |      | **≈1.3 GB** |
 
-Fits comfortably in Cloudflare R2's free storage tier. As an offline download for a phone, 572 MB is large;
-the "Offline maps" screen may later offer Moscow alone (138 MB) as a lighter option.
+\* Novosibirsk, Yekaterinburg, Kazan, Nizhny Novgorod, Chelyabinsk, Krasnoyarsk, Samara, Ufa,
+Rostov-on-Don, Omsk, Krasnodar, Voronezh, Perm, Volgograd. Vladimir Oblast at z15 would be 282 MB.
+
+Fits comfortably in Cloudflare R2's free storage tier. As an offline download for a phone, 618 MB is large;
+the "Offline maps" screen offers each city separately as a lighter option (Moscow alone would be 138 MB).
 
 ## Web bundle (first prototype)
 
