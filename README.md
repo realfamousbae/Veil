@@ -174,7 +174,7 @@ pnpm build                                          # результат — в 
 
 ```bash
 scripts/build-regions.sh --out /srv/veil/tiles world           # ≈190 МБ
-scripts/build-regions.sh --out /srv/veil/tiles moscow-oblast   # ≈570 МБ, или ваш регион
+scripts/build-regions.sh --out /srv/veil/tiles moscow-oblast   # ≈620 МБ, или ваш регион
 ```
 
 В папке появятся `world.pmtiles`, файлы регионов и каталог `index.json` для экрана «Офлайн-карты».

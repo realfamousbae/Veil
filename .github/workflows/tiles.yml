@@ -40,7 +40,7 @@ jobs:
       - name: Cut archives
         run: |
           scripts/build-regions.sh --out out world
-          scripts/build-regions.sh --out out moscow-oblast
+          scripts/build-regions.sh --out out moscow-oblast vladimir-oblast saint-petersburg novosibirsk yekaterinburg kazan nizhny-novgorod chelyabinsk krasnoyarsk samara ufa rostov-on-don omsk krasnodar voronezh perm volgograd
           ls -la out && cat out/index.json
 
       - name: Create the bucket if needed
