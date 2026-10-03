@@ -7,10 +7,12 @@
   interface Props {
     search: SearchState;
     onpick: (place: Place) => void;
+    /** Enter with no highlighted result: search for the query now. */
+    onsubmit: () => void;
     input?: HTMLInputElement;
   }
 
-  let { search, onpick, input = $bindable() }: Props = $props();
+  let { search, onpick, onsubmit, input = $bindable() }: Props = $props();
 
   const expanded = $derived(search.results.length > 0 && !search.selected);
 
@@ -27,7 +29,7 @@
       e.preventDefault();
       const active = expanded ? search.results[search.active] : undefined;
       if (active) onpick(active);
-      else search.submit();
+      else onsubmit();
     }
   }
 </script>

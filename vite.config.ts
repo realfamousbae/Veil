@@ -43,6 +43,10 @@ export default defineConfig({
           'assets/fonts/Noto Sans {Regular,Medium,Italic}/{0-255,256-511,1024-1279,8192-8447}.pbf',
         ],
         globIgnores: ['dev/**'],
+        // Only Vite's hashed file names are immutable. The plugin's default trusts all of
+        // assets/, so unhashed files from public/assets (icons.svg) kept their first cached
+        // version forever, even after the service worker updated.
+        dontCacheBustURLsMatching: /^assets\/[^/]+-[\w-]{8}\.\w+$/,
         navigateFallback: 'index.html',
         runtimeCaching: [
           {
