@@ -49,116 +49,118 @@
     </button>
   </header>
 
-  <fieldset>
-    <legend class="section-title">{t('settings.theme')}</legend>
-    <div class="segmented">
-      {#each themeOptions as option (option.id)}
-        <label class="segment">
+  <div class="dialog-body">
+    <fieldset>
+      <legend class="section-title">{t('settings.theme')}</legend>
+      <div class="segmented">
+        {#each themeOptions as option (option.id)}
+          <label class="segment">
+            <input
+              type="radio"
+              name="theme"
+              value={option.id}
+              checked={themeState.choice === option.id}
+              onchange={() => themeState.choose(option.id)}
+            />
+            {option.label}
+          </label>
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="section-title">{t('settings.language')}</legend>
+      <div class="segmented">
+        {#each localeOptions as option (option.id)}
+          <label class="segment">
+            <input
+              type="radio"
+              name="locale"
+              value={option.id}
+              checked={i18n.choice === option.id}
+              onchange={() => i18n.choose(option.id as 'auto' | Locale)}
+            />
+            {option.label}
+          </label>
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="section-title">{t('settings.search')}</legend>
+      <div class="list-group">
+        <label class="list-row">
+          <span class="grow">{t('settings.searchOnEnter')}</span>
           <input
-            type="radio"
-            name="theme"
-            value={option.id}
-            checked={themeState.choice === option.id}
-            onchange={() => themeState.choose(option.id)}
+            class="switch"
+            type="checkbox"
+            role="switch"
+            checked={searchPrefs.onEnter}
+            onchange={(e) => searchPrefs.setOnEnter(e.currentTarget.checked)}
           />
-          {option.label}
         </label>
-      {/each}
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend class="section-title">{t('settings.language')}</legend>
-    <div class="segmented">
-      {#each localeOptions as option (option.id)}
-        <label class="segment">
-          <input
-            type="radio"
-            name="locale"
-            value={option.id}
-            checked={i18n.choice === option.id}
-            onchange={() => i18n.choose(option.id as 'auto' | Locale)}
-          />
-          {option.label}
-        </label>
-      {/each}
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend class="section-title">{t('settings.search')}</legend>
-    <div class="list-group">
-      <label class="list-row">
-        <span class="grow">{t('settings.searchOnEnter')}</span>
-        <input
-          class="switch"
-          type="checkbox"
-          role="switch"
-          checked={searchPrefs.onEnter}
-          onchange={(e) => searchPrefs.setOnEnter(e.currentTarget.checked)}
-        />
-      </label>
-      <label class="list-row">
-        <span class="grow">
-          {t('settings.searchBias')}
-          <span class="hint">{t('settings.searchBiasHint')}</span>
-        </span>
-        <input
-          class="switch"
-          type="checkbox"
-          role="switch"
-          checked={searchPrefs.bias}
-          onchange={(e) => searchPrefs.setBias(e.currentTarget.checked)}
-        />
-      </label>
-    </div>
-  </fieldset>
-
-  <section aria-labelledby="settings-app">
-    <h3 id="settings-app" class="section-title">{t('settings.app')}</h3>
-    <div class="list-group">
-      <button
-        class="list-row"
-        type="button"
-        onclick={() => {
-          dialog.close();
-          onoffline();
-        }}
-      >
-        <span class="grow">{t('offline.open')}</span>
-        <Icon name="chevron" />
-      </button>
-      <button
-        class="list-row"
-        type="button"
-        onclick={() => {
-          dialog.close();
-          onprivacy();
-        }}
-      >
-        <span class="grow">{t('privacy.open')}</span>
-        <Icon name="chevron" />
-      </button>
-      {#if installState.standalone}
-        <p class="list-row">{t('pwa.installed')}</p>
-      {:else if installState.canPrompt}
-        <button class="list-row accent" type="button" onclick={() => installState.install()}>
+        <label class="list-row">
           <span class="grow">
-            {t('pwa.install')}
-            <span class="hint">{t('pwa.installHint')}</span>
+            {t('settings.searchBias')}
+            <span class="hint">{t('settings.searchBiasHint')}</span>
           </span>
-          <Icon name="download" />
+          <input
+            class="switch"
+            type="checkbox"
+            role="switch"
+            checked={searchPrefs.bias}
+            onchange={(e) => searchPrefs.setBias(e.currentTarget.checked)}
+          />
+        </label>
+      </div>
+    </fieldset>
+
+    <section aria-labelledby="settings-app">
+      <h3 id="settings-app" class="section-title">{t('settings.app')}</h3>
+      <div class="list-group">
+        <button
+          class="list-row"
+          type="button"
+          onclick={() => {
+            dialog.close();
+            onoffline();
+          }}
+        >
+          <span class="grow">{t('offline.open')}</span>
+          <Icon name="chevron" />
         </button>
-      {:else}
-        <p class="list-row">
-          <span class="grow">
-            {installState.ios ? t('pwa.iosHint') : t('pwa.otherHint')}
-            <span class="hint">{t('pwa.installHint')}</span>
-          </span>
-        </p>
-      {/if}
-    </div>
-  </section>
+        <button
+          class="list-row"
+          type="button"
+          onclick={() => {
+            dialog.close();
+            onprivacy();
+          }}
+        >
+          <span class="grow">{t('privacy.open')}</span>
+          <Icon name="chevron" />
+        </button>
+        {#if installState.standalone}
+          <p class="list-row">{t('pwa.installed')}</p>
+        {:else if installState.canPrompt}
+          <button class="list-row accent" type="button" onclick={() => installState.install()}>
+            <span class="grow">
+              {t('pwa.install')}
+              <span class="hint">{t('pwa.installHint')}</span>
+            </span>
+            <Icon name="download" />
+          </button>
+        {:else}
+          <p class="list-row">
+            <span class="grow">
+              {installState.ios ? t('pwa.iosHint') : t('pwa.otherHint')}
+              <span class="hint">{t('pwa.installHint')}</span>
+            </span>
+          </p>
+        {/if}
+      </div>
+    </section>
+  </div>
 </dialog>
 
 <style>

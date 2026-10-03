@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [
     svelte(),
     VitePWA({
-      // Registered from src/lib/pwa/register.ts; updates are offered, never forced mid-use.
+      // Registered from src/lib/pwa/register.ts; new versions activate immediately.
       injectRegister: false,
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeManifestIcons: false, // already matched by globPatterns
       manifest: {
         id: './',

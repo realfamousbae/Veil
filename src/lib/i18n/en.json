@@ -52,8 +52,6 @@
   "places.imported": "Imported: {added}. Already saved: {skipped}. Not recognized: {invalid}.",
   "places.importFailed": "This file doesn't look like GeoJSON with points.",
   "places.importTooLarge": "The file is too large (5 MB at most).",
-  "pwa.updateReady": "A new version of Veil is ready.",
-  "pwa.update": "Update",
   "settings.app": "App",
   "pwa.installed": "Veil is installed as an app.",
   "pwa.install": "Install Veil",

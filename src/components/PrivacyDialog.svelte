@@ -37,21 +37,23 @@
     </button>
   </header>
 
-  <p class="lead">{t('privacy.intro')}</p>
+  <div class="dialog-body">
+    <p class="lead">{t('privacy.intro')}</p>
 
-  <h3 class="section-title">{t('privacy.deviceTitle')}</h3>
-  <p class="list-group block">{t('privacy.device')}</p>
+    <h3 class="section-title">{t('privacy.deviceTitle')}</h3>
+    <p class="list-group block">{t('privacy.device')}</p>
 
-  <h3 class="section-title">{t('privacy.whoTitle')}</h3>
-  <ul class="list-group">
-    <li class="list-row">{t('privacy.hosting', { host: siteHost })}</li>
-    <li class="list-row">{t('privacy.search', { host: geocoderHost })}</li>
-    <li class="list-row">{t('privacy.location')}</li>
-    <li class="list-row">{t('privacy.links')}</li>
-  </ul>
+    <h3 class="section-title">{t('privacy.whoTitle')}</h3>
+    <ul class="list-group">
+      <li class="list-row">{t('privacy.hosting', { host: siteHost })}</li>
+      <li class="list-row">{t('privacy.search', { host: geocoderHost })}</li>
+      <li class="list-row">{t('privacy.location')}</li>
+      <li class="list-row">{t('privacy.links')}</li>
+    </ul>
 
-  <h3 class="section-title">{t('privacy.selfHostTitle')}</h3>
-  <p class="list-group block">{t('privacy.selfHost')}</p>
+    <h3 class="section-title">{t('privacy.selfHostTitle')}</h3>
+    <p class="list-group block">{t('privacy.selfHost')}</p>
+  </div>
 </dialog>
 
 <style>
