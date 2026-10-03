@@ -125,6 +125,44 @@ test('a shared place link opens without any geocoder request', async ({ page }) 
   expect(urls).toHaveLength(0);
 });
 
+test('Enter over an open place card shows results for the new query', async ({ page }) => {
+  await mockPhoton(page, (url, route) =>
+    route.fulfill({ json: { features: [feature(url.searchParams.get('q') ?? '', 2)] } }),
+  );
+  // A card opened from a link, as after reloading a shared place: no results behind it.
+  await open(page, '#map=16/55.7536/37.6215&place=55.75360,37.62150,UmVkIFNxdWFyZQ');
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
+
+  await searchbox(page).fill('Kremlin');
+  await searchbox(page).press('Enter');
+  await expect(page.getByRole('option', { name: /Kremlin/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toHaveCount(0);
+  await expect(page).not.toHaveURL(/place=/);
+
+  // A picked result's card gives way to the next search the same way.
+  await searchbox(page).press('ArrowDown');
+  await searchbox(page).press('Enter');
+  await expect(page.getByRole('heading', { name: 'Kremlin' })).toBeVisible();
+  await searchbox(page).fill('Arbat');
+  await searchbox(page).press('Enter');
+  await expect(page.getByRole('option', { name: /Arbat/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Kremlin' })).toHaveCount(0);
+});
+
+test('typing a new query over an open place card shows its results', async ({ page }) => {
+  await mockPhoton(page, (url, route) =>
+    route.fulfill({ json: { features: [feature(url.searchParams.get('q') ?? '', 2)] } }),
+  );
+  await open(page, '#map=16/55.7536/37.6215&place=55.75360,37.62150,UmVkIFNxdWFyZQ');
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
+
+  await searchbox(page).pressSequentially('Kr');
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toHaveCount(0);
+  await expect(page.getByText('Type at least 3 characters.')).toBeVisible();
+  await searchbox(page).pressSequentially('emlin');
+  await expect(page.getByRole('option', { name: /Kremlin/ })).toBeVisible();
+});
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -134,5 +172,20 @@ test.describe('phone', () => {
     await searchbox(page).fill('Red Square');
     await expect(page.getByRole('option', { name: /Red Square/ })).toBeVisible();
     await expect(page.locator('.sheet')).toHaveAttribute('data-snap', 'half');
+  });
+
+  test('the keyboard search key over a place card shows results', async ({ page }) => {
+    await mockPhoton(page, (url, route) =>
+      route.fulfill({ json: { features: [feature(url.searchParams.get('q') ?? '', 2)] } }),
+    );
+    await open(page, '#map=16/55.7536/37.6215&place=55.75360,37.62150,UmVkIFNxdWFyZQ');
+    await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
+
+    await searchbox(page).fill('Kremlin');
+    await searchbox(page).press('Enter');
+    await expect(page.getByRole('option', { name: /Kremlin/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Red Square' })).toHaveCount(0);
+    await expect(searchbox(page)).not.toBeFocused(); // the on-screen keyboard is hidden
+    await expect(page.locator('.sheet')).not.toHaveAttribute('data-snap', 'collapsed');
   });
 });

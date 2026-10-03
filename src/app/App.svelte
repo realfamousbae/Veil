@@ -27,7 +27,7 @@
   import type { GeocodeProvider, Place } from '../lib/providers/types';
   import { readPlaceFromHash, writePlaceToHash } from '../lib/search/place-hash';
   import { searchPrefs } from '../lib/search/prefs.svelte';
-  import { SearchState } from '../lib/search/search.svelte';
+  import { MIN_QUERY_LENGTH, SearchState } from '../lib/search/search.svelte';
   import { loadCatalog, type RegionInfo } from '../lib/tiles/catalog';
   import {
     localArchive,
@@ -337,6 +337,26 @@
     }
   }
 
+  /**
+   * Typing a new query: the user is looking for something else, so an open place card
+   * gives way to the search status and results, which would otherwise stay hidden behind it.
+   */
+  function typeQuery(query: string) {
+    if (search.selected) closeCard();
+    search.setQuery(query);
+  }
+
+  /** Enter in the search bar: searches for the query now, closing an open place card. */
+  function submitSearch() {
+    if (search.query.trim().length < MIN_QUERY_LENGTH) return;
+    if (search.selected) closeCard();
+    search.submit();
+    if (!wide) {
+      searchInput?.blur(); // hide the on-screen keyboard so the results are visible
+      if (snap === 'collapsed') snap = 'half';
+    }
+  }
+
   function isTyping(target: EventTarget | null): boolean {
     return (
       target instanceof HTMLElement &&
@@ -405,7 +425,13 @@
     </main>
 
     <div class="search-slot">
-      <SearchBar {search} onpick={pick} bind:input={searchInput} />
+      <SearchBar
+        {search}
+        onpick={pick}
+        onsubmit={submitSearch}
+        onquery={typeQuery}
+        bind:input={searchInput}
+      />
     </div>
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
