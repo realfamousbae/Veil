@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const ready = (page: Page) => page.locator('.maplibregl-map[data-ready="true"]');
 const cssVar = (page: Page, name: string) =>
@@ -47,4 +48,12 @@ test('switching language changes UI strings and the document language', async ({
   await expect(page.getByRole('heading', { name: 'Настройки' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('combobox', { name: 'Поиск' })).toBeVisible();
+});
+
+test('settings show the app version from package.json', async ({ page }) => {
+  const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
+  await page.goto('/#map=14/55.75/37.62');
+  await page.getByRole('button', { name: 'Map settings' }).click();
+  const label = `Veil · Version ${version}${version.startsWith('0.') ? ' · beta' : ''}`;
+  await expect(page.getByText(label, { exact: true })).toBeVisible();
 });

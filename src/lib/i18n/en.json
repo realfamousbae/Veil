@@ -53,6 +53,8 @@
   "places.importFailed": "This file doesn't look like GeoJSON with points.",
   "places.importTooLarge": "The file is too large (5 MB at most).",
   "settings.app": "App",
+  "settings.version": "Version {version}",
+  "settings.beta": "beta",
   "pwa.installed": "Veil is installed as an app.",
   "pwa.install": "Install Veil",
   "pwa.installHint": "Works offline and keeps your data safe from automatic cleanup.",

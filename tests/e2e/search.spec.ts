@@ -191,6 +191,26 @@ test('fast typing over a picked result steps back in history only once', async (
   await expect(searchbox(page)).toBeVisible();
 });
 
+test('a card opened right after closing another one stays open', async ({ page }) => {
+  await mockPhoton(page);
+  await open(page);
+  await searchbox(page).fill('Red Square');
+  await page.getByRole('option', { name: /Red Square/ }).click();
+  await expect(page.getByRole('heading', { name: 'Red Square' })).toBeVisible();
+
+  // Closing steps back in history asynchronously; the next card must survive that step.
+  await page.keyboard.press('Escape');
+  await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 800, y: 300 } });
+  await expect(page.getByRole('heading', { name: 'Here' })).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(page.getByRole('heading', { name: 'Here' })).toBeVisible();
+
+  // The new card has its own history entry: Back closes it and keeps the app open.
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Here' })).toHaveCount(0);
+  await expect(searchbox(page)).toBeVisible();
+});
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

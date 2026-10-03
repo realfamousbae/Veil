@@ -149,19 +149,33 @@
   // Android's system Back closes an open place card instead of leaving the app: opening
   // a card adds one history entry, and going back removes the card.
   const CARD_STATE = 'veil-card';
+  /**
+   * closeCard() stepped back and the popstate has not arrived yet. Until it does,
+   * history.state still shows the old card's entry, so it must not be trusted.
+   */
+  let ownBack = false;
   function pushCardEntry() {
+    if (ownBack) return; // the popstate handler adds the entry once the step back is done
     if (history.state?.[CARD_STATE]) return;
     history.pushState({ ...history.state, [CARD_STATE]: true }, '');
   }
   function closeCard() {
     // Deselect now, not on popstate: until then a second call (fast typing, Enter right
     // after typing) would see the card still open and step back twice, leaving the app.
-    const entry = history.state?.[CARD_STATE];
     search.deselect();
-    if (entry) history.back();
+    if (history.state?.[CARD_STATE] && !ownBack) {
+      ownBack = true;
+      history.back();
+    }
   }
   $effect(() => {
     const onpopstate = () => {
+      if (ownBack) {
+        // Our own step back. A card opened meanwhile stays and gets its history entry.
+        ownBack = false;
+        if (search.selected) pushCardEntry();
+        return;
+      }
       if (!history.state?.[CARD_STATE] && search.selected) search.deselect();
     };
     window.addEventListener('popstate', onpopstate);
