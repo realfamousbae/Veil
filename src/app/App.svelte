@@ -154,8 +154,11 @@
     history.pushState({ ...history.state, [CARD_STATE]: true }, '');
   }
   function closeCard() {
-    if (history.state?.[CARD_STATE]) history.back();
-    else search.deselect();
+    // Deselect now, not on popstate: until then a second call (fast typing, Enter right
+    // after typing) would see the card still open and step back twice, leaving the app.
+    const entry = history.state?.[CARD_STATE];
+    search.deselect();
+    if (entry) history.back();
   }
   $effect(() => {
     const onpopstate = () => {

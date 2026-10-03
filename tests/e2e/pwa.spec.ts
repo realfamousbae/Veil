@@ -28,6 +28,12 @@ test('theme-color follows the theme', async ({ page }) => {
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1c1f24');
 });
 
+test('a new service worker takes over without waiting for tabs to close', async ({ request }) => {
+  const sw = await (await request.get('/sw.js')).text();
+  // Set together with skipWaiting; the old worker only skipped waiting on a message.
+  expect(sw).toMatch(/self\.skipWaiting\(\),\w+\.clientsClaim\(\)/);
+});
+
 test('the app shell opens offline after the first visit', async ({ page, context }) => {
   await page.goto('/#map=14/55.75/37.62');
   await page.evaluate(async () => {
