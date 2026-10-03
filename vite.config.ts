@@ -43,6 +43,11 @@ export default defineConfig({
           'assets/fonts/Noto Sans {Regular,Medium,Italic}/{0-255,256-511,1024-1279,8192-8447}.pbf',
         ],
         globIgnores: ['dev/**'],
+        // The plugin turns these on for autoUpdate only with its own injected registration;
+        // without them a new worker waits until every tab is closed and users keep the old
+        // version.
+        skipWaiting: true,
+        clientsClaim: true,
         // Only Vite's hashed file names are immutable. The plugin's default trusts all of
         // assets/, so unhashed files from public/assets (icons.svg) kept their first cached
         // version forever, even after the service worker updated.
