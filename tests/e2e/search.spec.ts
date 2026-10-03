@@ -163,6 +163,34 @@ test('typing a new query over an open place card shows its results', async ({ pa
   await expect(page.getByRole('option', { name: /Kremlin/ })).toBeVisible();
 });
 
+test('fast typing over a picked result steps back in history only once', async ({ page }) => {
+  await mockPhoton(page, (url, route) =>
+    route.fulfill({ json: { features: [feature(url.searchParams.get('q') ?? '', 2)] } }),
+  );
+  await page.addInitScript(() => {
+    const w = window as unknown as { backs: number };
+    w.backs = 0;
+    const back = history.back.bind(history);
+    history.back = () => {
+      w.backs++;
+      back();
+    };
+  });
+  await open(page);
+  await searchbox(page).fill('Kremlin');
+  await searchbox(page).press('Enter');
+  await page.getByRole('option', { name: /Kremlin/ }).click();
+  await expect(page.getByRole('heading', { name: 'Kremlin' })).toBeVisible();
+
+  await searchbox(page).fill('');
+  await searchbox(page).pressSequentially('Arbat', { delay: 0 });
+  await searchbox(page).press('Enter');
+  await expect(page.getByRole('option', { name: /Arbat/ })).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => (window as unknown as { backs: number }).backs)).toBe(1);
+  await expect(searchbox(page)).toBeVisible();
+});
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
