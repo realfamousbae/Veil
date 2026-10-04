@@ -26,6 +26,7 @@
 - **A map of the whole world** from [OpenStreetMap](https://www.openstreetmap.org/) data — vector, fast, labels in English and Russian.
 - **Search** for places and addresses, and "What's here?" on long-press or right-click.
 - **Where am I** — only when you tap the button; your position never leaves the device.
+- **Directions** on foot, by public transport and by car — on installations with their own router ([MOTIS](https://github.com/motis-project/motis)).
 - **Saved places** stay on the device; GeoJSON export/import is the backup instead of an account.
 - **Offline maps** — download a region and use the map in airplane mode.
 - **Installs as an app** on Android and iOS and works without a connection.
@@ -39,13 +40,14 @@ Veil is a static site with no backend of its own and no accounts. Its rules are 
 
 - no third-party requests on load — fonts, icons and map tiles come from the site's own origin;
 - no cookies, `localStorage` or analytics; data stays on the device (IndexedDB, OPFS);
-- geolocation only from the button, never sent anywhere — not to search, not into the URL;
+- geolocation only from the button, never sent to search or into the URL; it reaches the router only when you build a route from "My location" yourself;
+- a route is sent only on "Build route", with points rounded to ~10 m, and there is no route history;
 - search goes out after 3 characters and a pause (or only on Enter); the map-area bias is rounded to ~10 km and can be turned off;
-- a strict Content Security Policy allows connections only to the site and the search service.
+- a strict Content Security Policy allows connections only to the site, the search service and the router.
 
 **Honest limits.** Complete anonymity on the web does not exist: the server sees your IP and
-which map areas you load (downloaded regions avoid that), and the search service sees your IP
-and queries. Self-hosting removes third parties completely. The in-app **Settings → Privacy**
+which map areas you load (downloaded regions avoid that), the search service sees your IP
+and queries, and the router sees your IP and the ends of the routes you build. Self-hosting removes third parties completely. The in-app **Settings → Privacy**
 page explains this with the hosts of the current deployment.
 
 ## Security and liability
@@ -94,8 +96,10 @@ pnpm dev
 `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm test:e2e` (including the privacy test) and
 `pnpm budget` must pass before a pull request — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-The runtime `public/config.json` points at the map files and the geocoder, so a deployment can
-change them without rebuilding. The site address for link previews is set in `.env`
+The runtime `public/config.json` points at the map files, the geocoder and the router
+(`routing`, `null` for no directions), so a deployment can change them without rebuilding. In
+development `routing.url` points at a non-existent `route.veil.invalid` that the e2e tests stub
+out; set it to your own MOTIS to build real routes. The site address for link previews is set in `.env`
 (`VITE_SITE_URL`).
 
 ## Running your own instance

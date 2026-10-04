@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Marker, type Map } from 'maplibre-gl';
+  import { LngLatBounds, Marker, type Map } from 'maplibre-gl';
   import { untrack } from 'svelte';
   import Attribution from '../components/Attribution.svelte';
   import Icon from '../components/Icon.svelte';
@@ -11,7 +11,7 @@
   import SettingsDialog from '../components/SettingsDialog.svelte';
   import Sheet, { type SheetSnap } from '../components/Sheet.svelte';
   import { loadConfig, resolveUrl } from '../lib/config';
-  import { Locator, type Fix } from '../lib/geolocation/locator.svelte';
+  import { Locator, locateOnce, type Fix } from '../lib/geolocation/locator.svelte';
   import { UserLocationMarker } from '../lib/geolocation/marker';
   import { i18n, t } from '../lib/i18n/i18n.svelte';
   import { readCameraFromHash, syncCameraHash, type Camera } from '../lib/map/hash';
@@ -23,8 +23,11 @@
   import { savedPlaces } from '../lib/places/saved.svelte';
   import { installState } from '../lib/pwa/install.svelte';
   import { registerServiceWorker } from '../lib/pwa/register';
+  import { MotisRoutingProvider } from '../lib/providers/motis';
   import { PhotonGeocodeProvider } from '../lib/providers/photon';
-  import type { GeocodeProvider, Place } from '../lib/providers/types';
+  import type { GeocodeProvider, Place, RouteMode, RoutingProvider } from '../lib/providers/types';
+  import { readRouteFromHash, writeRouteToHash } from '../lib/routing/route-hash';
+  import { RouteState } from '../lib/routing/route.svelte';
   import { readPlaceFromHash, writePlaceToHash } from '../lib/search/place-hash';
   import { searchPrefs } from '../lib/search/prefs.svelte';
   import { MIN_QUERY_LENGTH, SearchState } from '../lib/search/search.svelte';
@@ -41,6 +44,7 @@
 
   const MOSCOW: Camera = { center: [37.62, 55.75], zoom: 12, bearing: 0, pitch: 0 };
   const WIDE = 768; // must match the @container breakpoints in components
+  const PANEL_EDGE = 16 + 380; // right edge of the side panel when wide (see Sheet.svelte)
   const assetsBase = resolveUrl(`${import.meta.env.BASE_URL}assets/`);
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -50,6 +54,9 @@
   let catalog = $state.raw<RegionInfo[]>([]);
   let noDetail = $state(false);
   let geocoder = $state.raw<GeocodeProvider>();
+  let router = $state.raw<RoutingProvider>();
+  let routeModes = $state.raw<RouteMode[]>([]);
+  let routerHost = $state('');
   let error = $state<string>();
   let map = $state.raw<Map>();
   /**
@@ -64,12 +71,35 @@
   let snap = $state<SheetSnap>('collapsed');
   let sheetHeight = $state(0);
   let searchInput = $state<HTMLInputElement>();
+  let routeFromInput = $state<HTMLInputElement>();
   let settings: SettingsDialog;
   let offlineDialog: OfflineDialog;
   let privacyDialog: PrivacyDialog;
   let geocoderHost = $state('');
 
   const wide = $derived(width >= WIDE);
+  const searchDeps = {
+    provider: () => geocoder,
+    lang: () => i18n.locale,
+    bias: () => {
+      const c = map?.getCenter();
+      return searchPrefs.bias && c && !cameraOnUser ? { lng: c.lng, lat: c.lat } : undefined;
+    },
+    onEnterOnly: () => searchPrefs.onEnter,
+  };
+  const search = new SearchState(searchDeps);
+
+  // Directions: each end of the route has its own search field.
+  const route = new RouteState({
+    provider: () => router,
+    lang: () => i18n.locale,
+    locate: () => locateOnce(),
+    online: () => navigator.onLine,
+  });
+  const fromSearch = new SearchState(searchDeps);
+  const toSearch = new SearchState(searchDeps);
+  const routing = $derived(route.open && !!router);
+
   const style = $derived(
     ready
       ? buildStyle({
@@ -78,19 +108,10 @@
           assetsBase,
           worldMaxZoom,
           tilesVersion,
+          route: route.open ? route.itineraries[route.selected] : undefined,
         })
       : undefined,
   );
-
-  const search = new SearchState({
-    provider: () => geocoder,
-    lang: () => i18n.locale,
-    bias: () => {
-      const c = map?.getCenter();
-      return searchPrefs.bias && c && !cameraOnUser ? { lng: c.lng, lat: c.lat } : undefined;
-    },
-    onEnterOnly: () => searchPrefs.onEnter,
-  });
 
   // A place from a shared link is shown as is: no geocoder request on load (PRIVACY.md §1).
   // Geolocation, only on the "Where am I" button (PRIVACY.md §4).
@@ -149,6 +170,8 @@
   // Android's system Back closes an open place card instead of leaving the app: opening
   // a card adds one history entry, and going back removes the card.
   const CARD_STATE = 'veil-card';
+  /** Same for the directions panel, which opens over the card. */
+  const ROUTE_STATE = 'veil-route';
   /**
    * closeCard() stepped back and the popstate has not arrived yet. Until it does,
    * history.state still shows the old card's entry, so it must not be trusted.
@@ -168,12 +191,29 @@
       history.back();
     }
   }
+  function pushRouteEntry() {
+    if (ownBack || history.state?.[ROUTE_STATE]) return;
+    history.pushState({ ...history.state, [ROUTE_STATE]: true }, '');
+  }
+  function closeRoute() {
+    route.close();
+    fromSearch.clear();
+    toSearch.clear();
+    if (history.state?.[ROUTE_STATE] && !ownBack) {
+      ownBack = true;
+      history.back();
+    }
+  }
   $effect(() => {
     const onpopstate = () => {
       if (ownBack) {
         // Our own step back. A card opened meanwhile stays and gets its history entry.
         ownBack = false;
         if (search.selected) pushCardEntry();
+        return;
+      }
+      if (!history.state?.[ROUTE_STATE] && route.open) {
+        route.close();
         return;
       }
       if (!history.state?.[CARD_STATE] && search.selected) search.deselect();
@@ -183,6 +223,10 @@
   });
   $effect(() => {
     if (locator.error) showNotice(t(`locate.${locator.error}`));
+  });
+  $effect(() => {
+    const error = route.locateError;
+    if (error) showNotice(t(`locate.${error as 'denied'}`));
   });
 
   // Saved places on the map; tapping one opens its card.
@@ -211,6 +255,9 @@
 
   const restored = readPlaceFromHash();
   if (restored) search.select(restored);
+  // A route from a link fills in the form only; nothing is sent until "Build route".
+  const restoredRoute = readRouteFromHash();
+  if (restoredRoute) route.start(restoredRoute);
   const initialCamera: Camera =
     readCameraFromHash() ??
     (restored ? { ...MOSCOW, center: [restored.point.lng, restored.point.lat], zoom: 16 } : MOSCOW);
@@ -231,6 +278,14 @@
     ]);
     geocoder = new PhotonGeocodeProvider(config.geocoder.url, config.geocoder.langs);
     geocoderHost = new URL(config.geocoder.url, location.href).host;
+    if (config.routing) {
+      router = new MotisRoutingProvider(config.routing.url, config.routing.approximate);
+      routeModes = config.routing.modes;
+      routerHost = new URL(config.routing.url, location.href).host;
+      if (!routeModes.includes(route.mode) && routeModes[0]) route.setMode(routeModes[0]);
+    } else if (route.open) {
+      route.close(); // a link to a route on an installation without directions
+    }
 
     registerTileProtocol();
     worldMaxZoom = config.tiles.worldMaxZoom;
@@ -284,6 +339,48 @@
 
   // Selected place → URL fragment and map marker.
   $effect(() => writePlaceToHash(search.selected));
+  // The route form → URL fragment; the user's position only as "me" (PRIVACY.md §4).
+  $effect(() => writeRouteToHash(route.open ? route.form : null));
+
+  // A built route: fit it into view and open the sheet on phones.
+  $effect(() => {
+    const itinerary = route.open ? route.itineraries[route.selected] : undefined;
+    if (!map || !itinerary) return;
+    const m = map;
+    const coords = itinerary.legs.flatMap((leg) => leg.geometry);
+    if (!coords.length) return;
+    untrack(() => {
+      // The map now shows where the user is: as after "Where am I", neither the URL nor
+      // the geocoder may learn its center until they move it (PRIVACY.md §4). Otherwise
+      // the start could be worked out from the center and the destination in the URL.
+      if (route.usesMe) cameraOnUser = true;
+      locator.stopFollow();
+      if (!wide && snap === 'collapsed') snap = 'half';
+      const bounds = coords.reduce((b, c) => b.extend(c), new LngLatBounds(coords[0], coords[0]));
+      m.fitBounds(bounds, {
+        padding: cameraPadding(),
+        maxZoom: 17,
+        duration: reducedMotion() ? 0 : 800,
+      });
+    });
+  });
+
+  /** "Directions" on a place card: the place becomes the destination. */
+  let focusFrom = false;
+  function startRoute(place: Place) {
+    fromSearch.clear();
+    toSearch.clear();
+    route.start({ from: null, to: { kind: 'place', place } });
+    pushRouteEntry();
+    if (!wide) snap = 'full';
+    focusFrom = true;
+  }
+  // The panel loads on first use: focus "From" once its field exists.
+  $effect(() => {
+    if (!routeFromInput || !focusFrom) return;
+    focusFrom = false;
+    routeFromInput.focus();
+  });
 
   let marker: Marker | undefined;
   $effect(() => {
@@ -326,9 +423,9 @@
     });
   });
 
-  /** Keeps a camera target clear of the search bar and the open sheet on phones. */
+  /** Keeps a camera target clear of the search bar and the open sheet (side panel when wide). */
   function cameraPadding() {
-    if (wide) return 48;
+    if (wide) return { top: 48, bottom: 48, left: PANEL_EDGE + 48, right: 48 };
     const bottom = snap === 'collapsed' ? sheetHeight : Math.round(height * 0.5);
     return { top: 80, bottom: bottom + 16, left: 32, right: 32 };
   }
@@ -387,7 +484,8 @@
       e.preventDefault();
       searchInput?.focus();
     } else if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
-      if (document.activeElement === searchInput) searchInput?.blur();
+      if (isTyping(document.activeElement)) (document.activeElement as HTMLElement).blur();
+      else if (routing) closeRoute();
       else if (search.selected) closeCard();
       else snap = 'collapsed';
     }
@@ -397,7 +495,7 @@
 <svelte:window {onkeydown} />
 
 <div class="shell" bind:clientWidth={width} bind:clientHeight={height}>
-  <div class="layout" class:wide style:--sheet-height="{wide ? 0 : sheetHeight}px">
+  <div class="layout" class:wide class:routing style:--sheet-height="{wide ? 0 : sheetHeight}px">
     <main class="map-area" aria-label={t('app.map')}>
       {#if error}
         <p role="alert">{error}</p>
@@ -441,24 +539,41 @@
       </div>
     </main>
 
-    <div class="search-slot">
-      <SearchBar
-        {search}
-        onpick={pick}
-        onsubmit={submitSearch}
-        onquery={typeQuery}
-        bind:input={searchInput}
-      />
-    </div>
+    {#if !routing}
+      <div class="search-slot">
+        <SearchBar
+          {search}
+          onpick={pick}
+          onsubmit={submitSearch}
+          onquery={typeQuery}
+          bind:input={searchInput}
+        />
+      </div>
+    {/if}
 
     <Sheet bind:snap bind:visibleHeight={sheetHeight} containerHeight={height} {wide}>
-      <SearchPanel
-        {search}
-        onEnterOnly={searchPrefs.onEnter}
-        onpick={pick}
-        oncloseplace={closeCard}
-        onnotice={showNotice}
-      />
+      {#if routing}
+        <!-- Loaded on first use, to keep the main bundle small. -->
+        {#await import('../components/RoutePanel.svelte') then { default: RoutePanel }}
+          <RoutePanel
+            {route}
+            modes={routeModes}
+            {fromSearch}
+            {toSearch}
+            onclose={closeRoute}
+            bind:fromInput={routeFromInput}
+          />
+        {/await}
+      {:else}
+        <SearchPanel
+          {search}
+          onEnterOnly={searchPrefs.onEnter}
+          onpick={pick}
+          oncloseplace={closeCard}
+          onnotice={showNotice}
+          ondirections={router && startRoute}
+        />
+      {/if}
     </Sheet>
   </div>
 </div>
@@ -468,7 +583,7 @@
   onoffline={() => offlineDialog.open()}
   onprivacy={() => privacyDialog.open()}
 />
-<PrivacyDialog bind:this={privacyDialog} siteHost={location.host} {geocoderHost} />
+<PrivacyDialog bind:this={privacyDialog} siteHost={location.host} {geocoderHost} {routerHost} />
 <OfflineDialog bind:this={offlineDialog} {catalog} />
 
 <style>
@@ -571,6 +686,11 @@
       right: 16px;
       bottom: 16px;
       transition: none;
+    }
+
+    /* Directions replace the search bar: the panel moves up into its place. */
+    .routing :global(.sheet) {
+      top: 16px;
     }
 
     .notice,

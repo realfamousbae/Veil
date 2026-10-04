@@ -35,6 +35,10 @@ export interface UiTokens {
     /** The user's position dot, and its translucent accuracy circle. */
     location: string;
     locationAccuracy: string;
+    /** Route line on the map (walking and driving legs; transit legs use line colors). */
+    route: string;
+    /** Outline under the route line, to lift it off the map. */
+    routeCasing: string;
   };
   radius: { sm: string; md: string; lg: string; xl: string; full: string };
   /**

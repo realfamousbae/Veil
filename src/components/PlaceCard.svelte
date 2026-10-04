@@ -12,9 +12,12 @@
     onback?: () => void;
     onclose: () => void;
     onnotice: (text: string) => void;
+    /** Opens directions to this place; absent when there is no router. */
+    ondirections?: (() => void) | undefined;
   }
 
-  let { place, resolving, saved, ontogglesave, onback, onclose, onnotice }: Props = $props();
+  let { place, resolving, saved, ontogglesave, onback, onclose, onnotice, ondirections }: Props =
+    $props();
 
   const lat = $derived(place.point.lat.toFixed(5));
   const lng = $derived(place.point.lng.toFixed(5));
@@ -64,6 +67,12 @@
       <Icon name="close" />
     </button>
   </header>
+
+  {#if ondirections}
+    <button class="directions pill pill-accent glass" type="button" onclick={ondirections}>
+      <Icon name="route" />{t('place.directions')}
+    </button>
+  {/if}
 
   <div class="actions">
     <button
@@ -163,6 +172,11 @@
     margin: 4px 0 0;
     color: var(--color-text-muted);
     font-size: 14px;
+  }
+
+  .directions :global(.icon) {
+    width: 18px;
+    height: 18px;
   }
 
   /* Four equal action buttons, icon in a glass bubble with a caption below. */

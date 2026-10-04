@@ -1,6 +1,7 @@
 // The privacy contract of PRIVACY.md, checked end to end on the production build.
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { mockRouter, ROUTER } from './motis-mock';
 
 const config = JSON.parse(readFileSync('dist/config.json', 'utf8'));
 const headersFile = readFileSync('dist/_headers', 'utf8');
@@ -62,6 +63,7 @@ test('only allow-listed hosts are contacted, nothing is stored outside the devic
   });
 
   await enforceProductionHeaders(page, origin);
+  const routed = await mockRouter(page);
   await page.route('https://photon.komoot.io/**', (r) =>
     r.fulfill({
       json: {
@@ -94,6 +96,16 @@ test('only allow-listed hosts are contacted, nothing is stored outside the devic
   await page.getByRole('option', { name: /Red Square/ }).click();
   await page.getByRole('button', { name: 'Save' }).click();
 
+  // Directions: nothing goes to the router until "Build route".
+  await page.getByRole('button', { name: 'Directions' }).click();
+  await page.getByRole('combobox', { name: 'From' }).fill('Red Square');
+  await page.getByRole('option', { name: /Red Square/ }).click();
+  await page.waitForTimeout(500);
+  expect(routed).toEqual([]);
+  await page.getByRole('button', { name: 'Build route' }).click();
+  await expect(page.getByRole('button', { name: /Route 1/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).first().click();
+
   // "What's here?"
   await page.keyboard.press('Escape');
   await page.locator('.maplibregl-canvas').click({ button: 'right', position: { x: 800, y: 300 } });
@@ -120,7 +132,17 @@ test('only allow-listed hosts are contacted, nothing is stored outside the devic
     }
   }
 
-  // 3. No cookies, no web storage (§5.3); IndexedDB is fine and stays on the device.
+  // 3. The router got only the two points, rounded to ~10 m, and no credentials (§10).
+  expect(routed).toHaveLength(1);
+  for (const r of routed) {
+    const u = new URL(r.url());
+    for (const key of ['fromPlace', 'toPlace'])
+      expect(u.searchParams.get(key), key).toMatch(/^-?\d+(\.\d{1,4})?,-?\d+(\.\d{1,4})?$/);
+    expect(r.headers()['cookie']).toBeUndefined();
+    expect(r.headers()['referer']).toBeUndefined();
+  }
+
+  // 4. No cookies, no web storage (§5.3); IndexedDB is fine and stays on the device.
   expect(await page.context().cookies()).toEqual([]);
   expect(
     await page.evaluate(() => ({
@@ -130,7 +152,7 @@ test('only allow-listed hosts are contacted, nothing is stored outside the devic
     })),
   ).toEqual({ cookie: '', local: 0, session: 0 });
 
-  // 4. The app works under the production CSP.
+  // 5. The app works under the production CSP.
   expect(
     await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations),
   ).toEqual([]);
@@ -161,4 +183,66 @@ test('the Privacy page names this deployment’s hosts', async ({ page, baseURL 
   await expect(dialog).toContainText('no cookies, no analytics');
   await expect(dialog).toContainText(`(${new URL(baseURL ?? '').host})`);
   await expect(dialog).toContainText(`(${new URL(config.geocoder.url).host})`);
+  await expect(dialog).toContainText(`(${new URL(ROUTER).host})`);
+});
+
+test('a route from "My location" never reveals the position in the URL or to the geocoder', async ({
+  browser,
+}) => {
+  const USER = { latitude: 55.701234, longitude: 37.530156 };
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    locale: 'en-US',
+    serviceWorkers: 'block',
+    permissions: ['geolocation'],
+    geolocation: USER,
+  });
+  const page = await context.newPage();
+  const routed = await mockRouter(page);
+  const photon: URL[] = [];
+  await page.route('https://photon.komoot.io/**', (r) => {
+    photon.push(new URL(r.request().url()));
+    return r.fulfill({
+      json: {
+        features: [
+          { geometry: { coordinates: [37.6215, 55.7536] }, properties: { name: 'Red Square' } },
+        ],
+      },
+    });
+  });
+  await page.goto('/#map=14/55.75/37.62');
+  await expect(page.locator('.maplibregl-map[data-ready="true"]')).toBeVisible();
+
+  await page.getByRole('combobox', { name: 'Search' }).fill('Red Square');
+  await page.getByRole('option', { name: /Red Square/ }).click();
+  await page.waitForTimeout(1000); // let the camera settle on the place
+  const mapParam = () => page.evaluate(() => /map=([^&]*)/.exec(location.hash)?.[1]);
+  const before = await mapParam();
+
+  // Choosing "My location" only marks the start; nothing is sent yet.
+  await page.getByRole('button', { name: 'Directions' }).click();
+  await page.getByRole('option', { name: 'My location' }).click();
+  expect(routed).toEqual([]);
+  expect(await page.evaluate(() => location.hash)).toContain('route=walk~me~');
+
+  await page.getByRole('button', { name: 'Build route' }).click();
+  await expect(page.getByRole('button', { name: /Route 1/ })).toBeVisible();
+  expect(new URL(routed[0]?.url() ?? '').searchParams.get('fromPlace')).toBe('55.7012,37.5302');
+
+  // The map fits the route, but its center (halfway to the destination in the URL, so it
+  // would give the start away) stays out of the address.
+  await page.waitForTimeout(1500);
+  const hash = await page.evaluate(() => location.hash);
+  expect(await mapParam()).toBe(before);
+  expect(hash).not.toMatch(/55\.70|37\.53/);
+
+  // Nor does the geocoder get it as a location bias.
+  await page.keyboard.press('Escape');
+  const search = page.getByRole('combobox', { name: 'Search' });
+  const sent = photon.length;
+  await search.fill('pharmacy');
+  await search.press('Enter');
+  await expect.poll(() => photon.length).toBeGreaterThan(sent);
+  for (const u of photon.slice(sent)) expect(u.searchParams.has('lat')).toBe(false);
+  await context.close();
 });

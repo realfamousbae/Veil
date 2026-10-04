@@ -1,5 +1,7 @@
 import type { LayerSpecification, StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { layers } from '@protomaps/basemaps';
+import type { Itinerary } from '../providers/types';
+import { ROUTE_SOURCE, routeData, routeLayers } from '../routing/layer';
 import type { Theme } from '../../themes/types';
 import { tileUrl } from '../tiles/resolver';
 
@@ -20,6 +22,11 @@ export interface StyleOptions {
   worldMaxZoom: number;
   /** Bumped when the set of tile archives changes, so MapLibre refetches tiles. */
   tilesVersion: number;
+  /**
+   * The route shown on the map. It is part of the style, so it survives theme and language
+   * changes; a new route reaches the map as a GeoJSON data update of the style diff.
+   */
+  route?: Itinerary | undefined;
 }
 
 /** Builds a complete MapLibre style whose glyphs, sprites and tiles come from our own origin. */
@@ -33,6 +40,12 @@ export function buildStyle(opts: StyleOptions): StyleSpecification {
       id: `context-${l.id}`,
       minzoom: opts.worldMaxZoom + 1,
     }));
+
+  // The route goes above roads and buildings, under the first label layer.
+  const top = background ? [background, ...context, ...rest] : rest;
+  const labels = top.findIndex((l) => l.type === 'symbol');
+  const at = labels === -1 ? top.length : labels;
+  const all = [...top.slice(0, at), ...routeLayers(opts.theme), ...top.slice(at)];
 
   return {
     version: 8,
@@ -49,7 +62,8 @@ export function buildStyle(opts: StyleOptions): StyleSpecification {
         tiles: [tileUrl('context', opts.tilesVersion)],
         maxzoom: opts.worldMaxZoom,
       },
+      [ROUTE_SOURCE]: { type: 'geojson', data: routeData(opts.route) },
     },
-    layers: background ? [background, ...context, ...rest] : rest,
+    layers: all,
   };
 }

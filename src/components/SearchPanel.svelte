@@ -14,9 +14,10 @@
     /** Closes the place card (also used by the system Back button). */
     oncloseplace: () => void;
     onnotice: (text: string) => void;
+    ondirections?: ((place: Place) => void) | undefined;
   }
 
-  let { search, onEnterOnly, onpick, oncloseplace, onnotice }: Props = $props();
+  let { search, onEnterOnly, onpick, oncloseplace, onnotice, ondirections }: Props = $props();
 
   const queryLength = $derived(search.query.trim().length);
   const status = $derived.by(() => {
@@ -41,6 +42,7 @@
     onback={search.results.length ? oncloseplace : undefined}
     onclose={oncloseplace}
     {onnotice}
+    ondirections={ondirections && (() => search.selected && ondirections(search.selected))}
   />
 {:else}
   <p class="status" role="status" aria-live="polite">{status}</p>

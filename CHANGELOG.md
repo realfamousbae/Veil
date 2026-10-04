@@ -6,6 +6,19 @@ All notable changes to Veil are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Directions on foot, by public transport and by car through a configurable MOTIS router
+  (`routing` in `config.json`; `null` hides directions). A route is sent only on "Build
+  route", with points rounded to ~10 m; a link to a route opens without any request; a
+  route from "My location" keeps the position out of the address and away from search.
+  Transit legs whose times are estimated from intervals are marked as approximate.
+
+### Changed
+
+- On wide screens the map frames places and the user's position clear of the side panel.
+- Escape leaves any focused text field, not only the search bar.
+
 ### Fixed
 
 - On phones, moving focus to a control below the screen in the half-open panel no longer

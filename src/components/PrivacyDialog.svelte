@@ -2,8 +2,15 @@
   import { t } from '../lib/i18n/i18n.svelte';
   import Icon from './Icon.svelte';
 
-  /** Host names of this deployment, so the text stays true for self-hosted setups. */
-  let { siteHost, geocoderHost }: { siteHost: string; geocoderHost: string } = $props();
+  /**
+   * Host names of this deployment, so the text stays true for self-hosted setups.
+   * `routerHost` is empty when the installation has no directions.
+   */
+  let {
+    siteHost,
+    geocoderHost,
+    routerHost = '',
+  }: { siteHost: string; geocoderHost: string; routerHost?: string } = $props();
 
   let dialog: HTMLDialogElement;
 
@@ -47,7 +54,12 @@
     <ul class="list-group">
       <li class="list-row">{t('privacy.hosting', { host: siteHost })}</li>
       <li class="list-row">{t('privacy.search', { host: geocoderHost })}</li>
-      <li class="list-row">{t('privacy.location')}</li>
+      {#if routerHost}
+        <li class="list-row">{t('privacy.routing', { host: routerHost })}</li>
+        <li class="list-row">{t('privacy.locationRouting')}</li>
+      {:else}
+        <li class="list-row">{t('privacy.location')}</li>
+      {/if}
       <li class="list-row">{t('privacy.links')}</li>
     </ul>
 

@@ -20,6 +20,8 @@ const theme: Theme = {
       thumb: '#ffffff',
       location: '#1a73e8',
       locationAccuracy: 'rgb(26 115 232 / 0.16)',
+      route: '#0b5fcc',
+      routeCasing: '#ffffff',
     },
     radius: { sm: '10px', md: '14px', lg: '20px', xl: '30px', full: '999px' },
     glass: {
