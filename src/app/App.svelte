@@ -591,6 +591,10 @@
     container: shell / size;
     height: 100%;
     overflow: hidden;
+
+    /* Unlike hidden, clip can't be scrolled by focus or scrollIntoView: a control laid out
+       below the screen in the half-open sheet would otherwise shift the whole app up. */
+    overflow: clip;
   }
 
   /* The map always fills the screen; search, sheet and controls float over it in glass. */
