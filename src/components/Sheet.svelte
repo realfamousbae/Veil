@@ -85,6 +85,19 @@
     }
   }
 
+  /**
+   * Focus moved to something below the screen (keyboard, screen reader): open the sheet
+   * fully and bring it into view inside the sheet's own scroll area.
+   */
+  function onfocusin(e: FocusEvent) {
+    if (wide || drag || snap === 'full' || !(e.target instanceof HTMLElement)) return;
+    const target = e.target;
+    if (target.getBoundingClientRect().bottom <= window.innerHeight) return;
+    snap = 'full';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => target.scrollIntoView({ block: 'nearest' }), reduced ? 0 : 340);
+  }
+
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'ArrowUp') step(1);
     else if (e.key === 'ArrowDown') step(-1);
@@ -100,6 +113,7 @@
   data-snap={snap}
   style:--sheet-full="{heights.full}px"
   style:--sheet-y="{heights.full - height}px"
+  {onfocusin}
 >
   <button
     class="handle"
