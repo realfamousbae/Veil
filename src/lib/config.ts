@@ -1,3 +1,5 @@
+import type { RouteMode } from './providers/types';
+
 /** Runtime configuration, loaded from public/config.json (not baked into the build). */
 export interface AppConfig {
   tiles: {
@@ -14,6 +16,15 @@ export interface AppConfig {
     /** Result languages the instance supports besides "default" (local names). */
     langs?: string[];
   };
+  /** Router for directions; null hides directions altogether. */
+  routing: {
+    type: 'motis';
+    url: string;
+    /** Modes the router has data for, in the order the UI offers them. */
+    modes: RouteMode[];
+    /** Feed tags whose timetables are estimated from intervals (shown as approximate). */
+    approximate?: string[];
+  } | null;
   /** Base URL of the optional self-hosted server; null disables account features. */
   server: string | null;
 }

@@ -17,7 +17,15 @@
     | 'share'
     | 'edit'
     | 'pin'
-    | 'chevron';
+    | 'chevron'
+    | 'route'
+    | 'swap'
+    | 'walk'
+    | 'car'
+    | 'bus'
+    | 'tram'
+    | 'metro'
+    | 'train';
 
   let { name }: { name: IconName } = $props();
   const href = $derived(`${import.meta.env.BASE_URL}assets/icons.svg#${name}`);

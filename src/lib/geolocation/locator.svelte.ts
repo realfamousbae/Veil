@@ -89,3 +89,20 @@ export class Locator {
     this.mode = this.fix ? 'shown' : 'off';
   }
 }
+
+/**
+ * One position for a route from "My location" (PRIVACY.md §4): call it only from the click
+ * that builds the route. Rejects with an Error whose message is a LocateError.
+ */
+export function locateOnce(
+  geo: Geolocation | undefined = navigator.geolocation,
+): Promise<{ lng: number; lat: number }> {
+  return new Promise((resolve, reject) => {
+    if (!geo) return reject(new Error('unsupported' satisfies LocateError));
+    geo.getCurrentPosition(
+      (p) => resolve({ lng: p.coords.longitude, lat: p.coords.latitude }),
+      (e) => reject(new Error(ERRORS[e.code] ?? 'unavailable')),
+      OPTIONS,
+    );
+  });
+}
