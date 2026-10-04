@@ -6,6 +6,11 @@ All notable changes to Veil are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- On phones, moving focus to a control below the screen in the half-open panel no longer
+  shifts the whole app up; the panel opens fully instead.
+
 ## [0.1.0] - 2026-10-03
 
 The first public beta.
